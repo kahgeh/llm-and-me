@@ -1,0 +1,10 @@
+**/.env
+agents/node_modules
+agents/__pycache__
+agents/g-search-mcp
+tools/__pycache__
+.aider*
+**/.aider*
+
+**/3rdParty/*
+
