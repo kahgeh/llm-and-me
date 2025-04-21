@@ -1,6 +1,6 @@
 # Purpose
 
-The goal is to build a self‑hosted toolbox ("my‑ai‑and‑me") with tools for an ai enhanced coding workflow.
+The goal is to build a self‑hosted toolbox ("llm‑and‑me") with tools for an llm enhanced coding workflow.
 
 # Type of tools and evolution
 

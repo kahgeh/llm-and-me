@@ -1,0 +1,2 @@
+- Avoid code block nesting, where possible
+- Avoid the else construct, return early instead
