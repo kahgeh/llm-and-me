@@ -1,40 +1,80 @@
-import re
-import os
 import argparse
-from fastmcp.server.server import FastMCP
+import os
+import re
+from typing import Optional
 
-md_mcp = FastMCP("Markdown Service")
 
-
-@md_mcp.tool()
-def split_markdown(input_file, output_dir, top_level_header_level):
+def split_markdown(
+    output_dir: Optional[str] = None,
+    input_file: Optional[str] = None,
+    markdown_content: Optional[str] = None,
+):
     """
-    Splits a Markdown file into multiple files based on the specified top-level header level.
+    Splits a Markdown file or content string into multiple files based on the highest-level header found (e.g., H1 before H2).
+
+    Provide either `input_file` or `markdown_content`.
 
     Args:
-        input_file (str): The path to the input Markdown file.
-        output_dir (str): The directory where the output files will be created.
-        top_level_header_level (int): The level of the header to be considered as the top level (e.g., 1 for #, 2 for ##).
+        output_dir (Optional[str]): The directory for output files. Defaults to the input file's directory if input_file is provided, otherwise defaults to the current directory (".").
+        input_file (Optional[str]): The path to the input Markdown file. Used if markdown_content is None.
+        markdown_content (Optional[str]): The Markdown content as a string. Takes precedence over input_file.
+
+    Returns:
+        str: A message indicating the completion status or errors.
     """
-    try:
-        with open(input_file, "r", encoding="utf-8") as f:
-            markdown_content = f.read()
-    except FileNotFoundError:
-        print(f"Error: Input file not found: {input_file}")
-        return
-    except Exception as e:
-        print(f"Error reading input file: {e}")
-        return
+    messages = []
+
+    if markdown_content is None:
+        if input_file is None:
+            return "Error: Must provide either input_file or markdown_content."
+        try:
+            # Ensure input file path is absolute for reliable reading
+            abs_input_file = os.path.abspath(input_file)
+            with open(abs_input_file, "r", encoding="utf-8") as f:
+                markdown_content = f.read()
+        except FileNotFoundError:
+            return f"Error: Input file not found: {abs_input_file}"
+        except Exception as e:
+            return f"Error reading input file {abs_input_file}: {e}"
+    elif not isinstance(markdown_content, str):
+        return "Error: markdown_content must be a string."
+
+    if not markdown_content:
+        return "Error: Markdown content is empty."
+
+    # Determine default output directory if not provided
+    if output_dir is None:
+        if input_file:
+            output_dir = os.path.dirname(os.path.abspath(input_file))
+        else:
+            # If only content is provided, default to current directory
+            output_dir = "."
+
+    # --- Auto-detect top header level ---
+    top_level_header_level = 0
+    # Regex to find the first header line (up to H6)
+    first_header_match = re.search(
+        r"^(#{1,6})\s+.*$", markdown_content, flags=re.MULTILINE
+    )
+    if first_header_match:
+        top_level_header_level = len(
+            first_header_match.group(1)
+        )  # Count the '#' characters
+        messages.append(f"Auto-detected top header level: H{top_level_header_level}")
+    else:
+        return (
+            "Error: No markdown headers found in the content to determine split level."
+        )
+    # --- End auto-detect ---
 
     # Create the output directory if it doesn't exist
     # Check if output_dir is not empty before trying to create it
     if output_dir and not os.path.exists(output_dir):
         try:
             os.makedirs(output_dir)
-            print(f"Created output directory: {output_dir}")
+            messages.append(f"Created output directory: {output_dir}")
         except OSError as e:
-            print(f"Error creating output directory: {e}")
-            return
+            return f"Error creating output directory: {e}"
     elif (
         not output_dir
     ):  # Handle case where output_dir might be empty string if input is in current dir
@@ -46,19 +86,6 @@ def split_markdown(input_file, output_dir, top_level_header_level):
 
     # Find all top-level headers and their positions
     matches = list(re.finditer(header_pattern, markdown_content, flags=re.MULTILINE))
-
-    # Handle content before the first header (introduction)
-    first_header_start = matches[0].start() if matches else len(markdown_content)
-    intro_content = markdown_content[:first_header_start].strip()
-    if intro_content:
-        intro_filename = "introduction.md"
-        intro_filepath = os.path.join(output_dir, intro_filename)
-        try:
-            with open(intro_filepath, "w", encoding="utf-8") as outfile:
-                outfile.write(intro_content)
-            print(f"Created file: {intro_filepath}")
-        except Exception as e:
-            print(f"Error writing introduction file: {e}")
 
     # Iterate through the matches to split the content
     for i, match in enumerate(matches):
@@ -86,14 +113,17 @@ def split_markdown(input_file, output_dir, top_level_header_level):
         try:
             with open(filepath, "w", encoding="utf-8") as outfile:
                 outfile.write(file_content)
-            print(f"Created file: {filepath}")
+            messages.append(f"Created file: {filepath}")
         except Exception as e:
-            print(f"Error writing to file {filepath}: {e}")
+            messages.append(f"Error writing to file {filepath}: {e}")
 
-    if not matches and not intro_content:
-        print(
-            "Warning: No headers found at the specified level and no introductory content detected."
-        )
+    # Return a summary message for the MCP tool execution
+    if any("Error" in msg for msg in messages):
+        return "\n".join(messages)
+    elif not messages:
+        return "No actions taken. Input might be empty or lack specified headers."
+    else:
+        return "Markdown splitting completed.\n" + "\n".join(messages)
 
 
 def main():
@@ -101,43 +131,46 @@ def main():
     Main function to parse command line arguments and call the split_markdown function.
     """
     parser = argparse.ArgumentParser(
-        description="Splits a Markdown file into multiple files based on top-level headers."
-    )
-    parser.add_argument("input_file", help="Path to the input Markdown file.")
-    parser.add_argument(
-        "top_level_header_level",
-        type=int,
-        help="The level of the header to split by (e.g., 1 for #, 2 for ##).",
+        description="Splits a Markdown file into multiple files based on the automatically detected highest-level header."
     )
     # Make output_dir optional
     parser.add_argument(
         "-o",
         "--output-dir",
         help="Directory for output files (defaults to the input file's directory).",
+        required=False,
+    )
+
+    parser.add_argument("-i", "--input-file", help="Path to the input Markdown file.")
+    parser.add_argument(
+        "-c",
+        "--markdown-content",
+        help="Markdown content as a string. If provided, input-file is ignored.",
+        required=False,
     )
 
     args = parser.parse_args()
 
-    # Validate the top_level_header_level
-    if not 1 <= args.top_level_header_level <= 6:
-        print("Error: top_level_header_level must be between 1 and 6 (inclusive).")
+    # Get absolute path for input file if provided
+    input_file_abs = None
+    if args.input_file:
+        input_file_abs = os.path.abspath(args.input_file)
+        if not os.path.isfile(input_file_abs):
+            print(f"Error: Input file not found: {args.input_file}")
+            return
+    elif not args.markdown_content:
+        print("Error: Must provide either --input-file or --markdown-content.")
         return
 
-    # Determine the output directory
-    if args.output_dir is None:
-        # Default to the directory of the input file
-        output_dir = os.path.dirname(os.path.abspath(args.input_file))
-    else:
-        output_dir = args.output_dir
 
-    # Get absolute path for input file to handle relative paths correctly
-    input_file_abs = os.path.abspath(args.input_file)
-
-    if not os.path.isfile(input_file_abs):
-        print(f"Error: Input file not found: {args.input_file}")
-        return
-
-    split_markdown(input_file_abs, output_dir, args.top_level_header_level)
+    # Call split_markdown. output_dir defaulting is handled inside.
+    result = split_markdown(
+        output_dir=args.output_dir,  # Pass None if not provided, function handles default
+        input_file=input_file_abs,
+        markdown_content=args.markdown_content,
+    )
+    # Print the result message for CLI feedback
+    print(result)
 
 
 if __name__ == "__main__":
