@@ -564,6 +564,7 @@ name = "llm-and-me"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "dev-tools" },
     { name = "dotenv" },
     { name = "logfire" },
     { name = "mcp-server-fetch" },
@@ -574,6 +575,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "dev-tools", virtual = "packages/tools" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "logfire", specifier = ">=3.12.0" },
     { name = "mcp-server-fetch", specifier = ">=2025.1.17" },

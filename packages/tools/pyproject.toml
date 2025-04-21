@@ -1,3 +1,6 @@
 [project]
 name = "dev-tools"
 version = "0.1.0"
+dependencies = [
+    "fastmcp>=2.1.2",
+]
