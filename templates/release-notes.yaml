@@ -1,0 +1,32 @@
+prompt: |
+  $input - create release notes. Use the following way to identify the different types of commits, to help with summarisation:
+
+  feature, major update - no prefix
+  operational capability - prefixed with `ops:`
+  product health improvements - prefixed with `chore:` 
+  broken down commits as part of a bigger change to help with improving understanding and safety of change -  prefixed with `wip:` 
+  verification of acceptance criteria - prefixed with `ac:`
+
+  The release note should have the following format and content 
+  --------------------------------------------------------------------------------- 
+  # Release notes 
+
+  <provide short one sentence summary here. the shortening strategy is to ommit details, mention customer focused features first if there are any and drop the rest. if there are significant number of operational improvements, summarise if possible, otherwise pick one and provide a count of the rest.>
+
+  ## Features
+  <bulleted list of features, with a short description of benefits, include only customer focussed features. if there are none exclude this section. avoid describing effort, prefer outcomes>
+
+  ## Bug Fixes
+  <bulleted list of bug fixes, with a short description of fix outcomes, include only customer focussed fixes. if there are none, exclude this section> 
+
+  ## Others
+  ### Operational Improvements
+  <bulleted list of operational features,  benefits. if there are none exclude this section, if there are none, exclude this section. avoid describing effort, prefer outcomes>
+
+  ### Product health 
+  < pick one significant improvements and just provide a count of the number of commits that relate to improving the product health for the others, if there are none, exclude this section >
+
+  --------------------------------------------------------------------------------  
+
+  $context
+  >
