@@ -29,14 +29,12 @@ except ImportError:
 
 try:
     from git_diff import get_git_diff
-
-    # Import both diff_stats and the renamed check function
     from git_change_warning import (
-        diff_stats,
         check_change_size as check_git_change_size_logic,
     )
+    from git_commit_convention_reader import get_commit_conventions
 except ImportError as e:
-    print(f"Error importing Git tool functions: {e}", file=sys.stderr)
+    print(f"Error importing Git or Commit tool functions: {e}", file=sys.stderr)
     print(
         "Ensure git_diff.py and git_change_warning.py are in the same directory.",
         file=sys.stderr,
@@ -54,6 +52,7 @@ mcp = FastMCP(
 # Ensure the imported functions have appropriate docstrings for the agent to understand
 mcp.add_tool(get_git_diff)
 mcp.add_tool(check_git_change_size_logic)
+mcp.add_tool(get_commit_conventions)
 
 
 # Entry point for running the server directly (e.g., for testing)
