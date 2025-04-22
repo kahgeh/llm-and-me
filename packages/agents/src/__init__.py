@@ -25,10 +25,19 @@ markdown_server = MCPServerStdio(
         "packages/tools/src/markdown_mcp_server.py",
     ],
 )
+git_server = MCPServerStdio(
+    "uv",
+    args=[
+        "run",
+        "packages/tools/src/git_mcp_server.py",
+    ],
+)
+
+
 agent = Agent(
     "deepseek:deepseek-chat",
     instrument=True,
-    mcp_servers=[markdown_server, macos_system_server],
+    mcp_servers=[markdown_server, macos_system_server, git_server],
     system_prompt="You are a software engineering assistant, using en-AU locale. Do not try more than 3 times. If the user asks for json, return plain json text, nothing more",
 )
 
