@@ -5,7 +5,6 @@ MCP Server exposing Git related tools.
 
 import os
 import sys
-from typing import Optional
 
 # Add the src directory to the Python path
 # This allows importing modules from the same directory when run as a script
@@ -28,15 +27,15 @@ except ImportError:
     sys.exit(1)
 
 try:
-    from git_diff import get_git_diff
-    from git_change_warning import (
+    from git.git_diff import get_git_diff
+    from git.git_change_warning import (
         check_change_size as check_git_change_size_logic,
     )
-    from git_commit_convention_reader import get_commit_conventions
+    from git.git_commit_convention_reader import get_commit_conventions
 except ImportError as e:
-    print(f"Error importing Git or Commit tool functions: {e}", file=sys.stderr)
+    print(f"Error importing Git tool functions: {e}", file=sys.stderr)
     print(
-        "Ensure git_diff.py and git_change_warning.py are in the same directory.",
+        "Ensure the 'git' subdirectory exists and contains the required tool modules.",
         file=sys.stderr,
     )
     sys.exit(1)
