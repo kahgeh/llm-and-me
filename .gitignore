@@ -8,3 +8,6 @@ tools/__pycache__
 
 **/3rdParty/*
 
+packages/tools/src/__pycache__
+packages/tools/3rdParty
+packages/tools/3rdParty
