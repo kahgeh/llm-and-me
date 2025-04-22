@@ -25,6 +25,7 @@ markdown_server = MCPServerStdio(
         "packages/tools/src/markdown_mcp_server.py",
     ],
 )
+
 git_server = MCPServerStdio(
     "uv",
     args=[
@@ -34,8 +35,27 @@ git_server = MCPServerStdio(
 )
 
 
+# Prompt the user to choose the foundation model before creating the agent.
+def select_model() -> str:
+    models = [
+        "deepseek:deepseek-chat",
+        "openai:gpt-4o-mini",
+        "openai:gpt-4o",
+        "google-gla:gemini-2.0-flash",
+    ]
+    print("Select a model:")
+    for i, model in enumerate(models, 1):
+        print(f"{i}. {model}")
+    while True:
+        choice = input("> ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(models):
+            return models[int(choice) - 1]
+        print("Invalid selection, try again.")
+
+
+selected_model = select_model()
 agent = Agent(
-    "deepseek:deepseek-chat",
+    selected_model,
     instrument=True,
     mcp_servers=[markdown_server, macos_system_server, git_server],
     system_prompt="You are a software engineering assistant, using en-AU locale. Do not try more than 3 times. If the user asks for json, return plain json text, nothing more",
