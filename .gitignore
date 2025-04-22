@@ -2,12 +2,12 @@
 agents/node_modules
 agents/__pycache__
 agents/g-search-mcp
-tools/__pycache__
 .aider*
 **/.aider*
 
 **/3rdParty/*
 
-packages/tools/src/__pycache__
 packages/tools/3rdParty
 packages/tools/3rdParty
+
+**/__pycache__
