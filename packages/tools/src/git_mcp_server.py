@@ -27,11 +27,11 @@ except ImportError:
     sys.exit(1)
 
 try:
-    from git.git_diff import get_git_diff
-    from git.git_change_warning import (
+    from git_tools.git_diff import get_git_diff
+    from git_tools.git_change_warning import (
         check_change_size as check_git_change_size_logic,
     )
-    from git.git_commit_convention_reader import get_commit_conventions
+    from git_tools.git_commit_convention_reader import get_commit_conventions
 except ImportError as e:
     print(f"Error importing Git tool functions: {e}", file=sys.stderr)
     print(
