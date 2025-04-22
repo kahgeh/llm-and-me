@@ -42,6 +42,7 @@ def select_model() -> str:
         "openai:gpt-4o-mini",
         "openai:gpt-4o",
         "google-gla:gemini-2.0-flash",
+        "google-gla:gemini-2.5-pro-exp-03-25",
     ]
     print("Select a model:")
     for i, model in enumerate(models, 1):
