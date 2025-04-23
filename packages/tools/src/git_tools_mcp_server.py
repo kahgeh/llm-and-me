@@ -32,6 +32,7 @@ try:
         check_change_size as check_git_change_size_logic,
     )
     from git_tools.git_commit_convention_reader import get_commit_conventions
+    from git_tools.repo_root_finder import get_repo_root
 except ImportError as e:
     print(f"Error importing Git tool functions: {e}", file=sys.stderr)
     print(
@@ -47,11 +48,13 @@ mcp = FastMCP(
     project_root=project_root,
 )
 
-# Add the imported functions directly as tools
+
+# Add the imported functions and the locally defined tool
 # Ensure the imported functions have appropriate docstrings for the agent to understand
 mcp.add_tool(get_git_diff)
 mcp.add_tool(check_git_change_size_logic)
 mcp.add_tool(get_commit_conventions)
+mcp.add_tool(get_repo_root)
 
 
 # Entry point for running the server directly (e.g., for testing)

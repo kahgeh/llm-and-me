@@ -26,11 +26,18 @@ markdown_server = MCPServerStdio(
     ],
 )
 
-git_server = MCPServerStdio(
+custom_git_server = MCPServerStdio(
     "uv",
     args=[
         "run",
-        "packages/tools/src/git_mcp_server.py",
+        "packages/tools/src/git_tools_mcp_server.py",
+    ],
+)
+
+main_git_server = MCPServerStdio(
+    "uvx",
+    args=[
+        "mcp-server-git",
     ],
 )
 
@@ -58,7 +65,12 @@ selected_model = select_model()
 agent = Agent(
     selected_model,
     instrument=True,
-    mcp_servers=[markdown_server, macos_system_server, git_server],
+    mcp_servers=[
+        markdown_server,
+        macos_system_server,
+        custom_git_server,
+        main_git_server,
+    ],
     system_prompt="You are a software engineering assistant, using en-AU locale. Do not try more than 3 times. If the user asks for json, return plain json text, nothing more",
 )
 
