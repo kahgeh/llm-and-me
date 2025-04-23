@@ -1,12 +1,13 @@
 # Types of commit
 
-| Type                                                                                                              | message prefix |
-| ----------------------------------------------------------------------------------------------------------------- | -------------- |
-| feature, major update                                                                                             | no prefix      |
-| operational capability                                                                                            | `ops:`         |
-| product health improvements                                                                                       | `chore:`       |
-| broken down commits as part of a bigger change <br> to help with improving understanding and safety <br>of change | `wip:`         |
-| verification of acceptance criteria                                                                               | `ac:`          |
+| Type                                                                                                                  | message prefix |
+| --------------------------------------------------------------------------------------------------------------------- | -------------- |
+| feature, major update                                                                                                 | no prefix      |
+| operational capability                                                                                                | `ops:`         |
+| product health improvements, e.g. documentations, maintenance                                                         | `chore:`       |
+| broken down commits as part of a bigger new change <br> to help with improving understanding and safety <br>of change | `wip:`         |
+| verification of acceptance criteria                                                                                   | `ac:`          |
+| code organisation or refactor, typically to create new/shared abstractions to be used by existing and new feature     | `rftr:`        |
 
 # Focus area
 
