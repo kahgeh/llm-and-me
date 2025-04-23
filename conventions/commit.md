@@ -7,3 +7,7 @@
 | product health improvements                                                                                       | `chore:`       |
 | broken down commits as part of a bigger change <br> to help with improving understanding and safety <br>of change | `wip:`         |
 | verification of acceptance criteria                                                                               | `ac:`          |
+
+# Focus area
+
+Commits should at best effort be single focus area.
