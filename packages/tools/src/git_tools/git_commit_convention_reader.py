@@ -1,39 +1,9 @@
 #!/usr/bin/env python3
-"""
-Tool to read commit conventions from the project's conventions/commit.md file.
-"""
-
-from __future__ import annotations
 
 import os
-import sys
 
-
-def find_project_root(start_path: str, marker: str = ".git", max_levels: int = 10) -> str:
-    """
-    Helper function to find the project root directory marked by a specific file/directory.
-    Searches upwards from start_path, stopping after max_levels.
-    """
-    current_path = os.path.abspath(start_path)
-    levels_checked = 0
-    while levels_checked < max_levels:
-        # Check if the marker (specifically .git directory) exists
-        if os.path.isdir(os.path.join(current_path, marker)):
-            return current_path
-
-        parent_path = os.path.dirname(current_path)
-        if parent_path == current_path:
-            # Reached the filesystem root without finding the marker
-            break
-
-        current_path = parent_path
-        levels_checked += 1
-
-    # If the loop finishes without finding the marker
-    raise FileNotFoundError(
-        f"Could not find project root containing '{marker}' within {max_levels} levels "
-        f"up from '{start_path}'"
-    )
+# Import the centralized function for finding the repo root
+from .repo_root_finder import get_repo_root
 
 
 def get_commit_conventions() -> str:
@@ -45,8 +15,9 @@ def get_commit_conventions() -> str:
         or an error message if the file cannot be found or read.
     """
     try:
-        # Find project root starting from this file's directory
-        project_root = find_project_root(os.path.dirname(__file__))
+        # Find project root using the imported function
+        # Note: get_repo_root determines the start path internally based on its own location
+        project_root = get_repo_root()
         convention_file_path = os.path.join(project_root, "conventions", "commit.md")
 
         if not os.path.exists(convention_file_path):
