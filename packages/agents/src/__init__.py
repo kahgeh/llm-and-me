@@ -78,18 +78,18 @@ agent = Agent(
 async def main():
     message_history = []  # Initialize empty message history
     async with agent.run_mcp_servers():
-        print("Agent started. Type '/reset' to clear history, 'exit' to quit.")
+        print("Agent started. Type '/reset' to clear history, '/exit' to quit.")
         while True:
             user_input = input("\n> ").strip()
 
             if not user_input:
                 continue
 
-            if user_input.lower() == "exit":
-                break
-
             if user_input.startswith("/"):
                 command = user_input[1:].lower()
+                if command == "exit":
+                    break
+
                 if command == "reset":
                     message_history = []
                     print("Message history cleared.")
@@ -107,4 +107,3 @@ if __name__ == "__main__":
     import asyncio
 
     asyncio.run(main())
-
