@@ -10,4 +10,10 @@
 
 # Focus area
 
-Commits should at best effort be single focus area.
+Commits should reflect best effort be single focus area.
+
+# Message
+
+Commit message should reflect best effort to indicate outcome instead of the work.
+
+If there are any non-obvious reason/details for the change, add a short note on the second line of the commit message.
