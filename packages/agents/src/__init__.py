@@ -76,18 +76,35 @@ agent = Agent(
 
 
 async def main():
+    message_history = []  # Initialize empty message history
     async with agent.run_mcp_servers():
-        result = await agent.run("hello")
+        print("Agent started. Type '/reset' to clear history, 'exit' to quit.")
         while True:
-            print(f"\n{result.output}")
-            user_input = input("\n> ")
+            user_input = input("\n> ").strip()
+
+            if not user_input:
+                continue
+
             if user_input.lower() == "exit":
                 break
-            result = await agent.run(user_input, message_history=result.new_messages())
+
+            if user_input.startswith("/"):
+                command = user_input[1:].lower()
+                if command == "reset":
+                    message_history = []
+                    print("Message history cleared.")
+                    continue
+                else:
+                    print(f"Unknown command: {user_input}")
+                    continue
+
+            result = await agent.run(user_input, message_history=message_history)
+            print(f"\n{result.output}")
+            message_history.extend(result.new_messages())
 
 
 if __name__ == "__main__":
     import asyncio
 
     asyncio.run(main())
-# This file makes the 'src' directory under 'agents' a Python package.
+
