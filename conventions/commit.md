@@ -2,7 +2,9 @@
 
 | Type                                                                                                                  | message prefix |
 | --------------------------------------------------------------------------------------------------------------------- | -------------- |
-| feature, major update                                                                                                 | no prefix      |
+| feature                                                                                                               | `feat`         |
+| change in behavior, that impacts the user                                                                             | `upd`          |
+| bug fixes, that positively impacts the user                                                                           | `fix`          |
 | operational capability                                                                                                | `ops:`         |
 | product health improvements, e.g. documentations, maintenance                                                         | `chore:`       |
 | broken down commits as part of a bigger new change <br> to help with improving understanding and safety <br>of change | `wip:`         |
