@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 from dotenv import load_dotenv
 from logfire import configure
@@ -10,35 +11,25 @@ load_dotenv()
 configure(token=os.getenv("LOGFIRE_TOKEN"))
 print(sys.executable)
 
-macos_system_server = MCPServerStdio(
-    "uv",
-    args=[
-        "run",
-        "packages/tools/src/macos_system_mcp_server.py",
-    ],
-)
-
 markdown_server = MCPServerStdio(
     "uv",
-    args=[
-        "run",
-        "packages/tools/src/markdown_mcp_server.py",
-    ],
+    args=["run", "markdown-mcp-server"],
+)
+
+macos_system_server = MCPServerStdio(
+    "uv",
+    args=["run", "macos-mcp-server"],
 )
 
 custom_git_server = MCPServerStdio(
     "uv",
-    args=[
-        "run",
-        "packages/tools/src/git_tools_mcp_server.py",
-    ],
+    args=["run", "git-tools-mcp-server"],
 )
 
+# Assuming mcp-server-git is already a command provided by the mcp-server-fetch package
 main_git_server = MCPServerStdio(
-    "uvx",
-    args=[
-        "mcp-server-git",
-    ],
+    "mcp-server-git",
+    args=[],
 )
 
 

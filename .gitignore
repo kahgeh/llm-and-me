@@ -11,3 +11,6 @@ packages/tools/3rdParty
 packages/tools/3rdParty
 
 **/__pycache__
+**/*.egg-info
+
+dist
