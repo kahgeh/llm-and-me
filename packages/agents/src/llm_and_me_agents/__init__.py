@@ -1,9 +1,12 @@
+import asyncio
 import os
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 from logfire import configure
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import InMemoryHistory
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServerStdio
 
@@ -68,10 +71,16 @@ agent = Agent(
 
 async def main():
     message_history = []  # Initialize empty message history
+    history = InMemoryHistory()
+    session = PromptSession(history=history)
+
     async with agent.run_mcp_servers():
         print("Agent started. Type '/reset' to clear history, '/exit' to quit.")
         while True:
-            user_input = input("\n> ").strip()
+            try:
+                user_input = (await session.prompt_async("\n> ")).strip()
+            except (EOFError, KeyboardInterrupt):  # Handle Ctrl+D/Ctrl+C gracefully
+                break
 
             if not user_input:
                 continue
@@ -95,6 +104,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    import asyncio
-
     asyncio.run(main())

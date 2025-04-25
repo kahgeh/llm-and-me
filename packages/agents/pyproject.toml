@@ -14,6 +14,7 @@ dependencies = [
     "logfire>=3.12.0",
     "pydantic-ai>=0.0.52",
     "pylint>=3.3.6",
+    "prompt_toolkit>=3.0", # Add prompt_toolkit
     "tool>=0.8.0",
 ]
 
