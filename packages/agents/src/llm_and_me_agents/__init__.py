@@ -1,11 +1,16 @@
+import argparse
 import asyncio
 import os
 import sys
-from pathlib import Path
 
 from dotenv import load_dotenv
 from logfire import configure
 from prompt_toolkit import PromptSession
+from prompt_toolkit.cursor_shapes import (
+    CursorShape,
+    ModalCursorShapeConfig,
+    SimpleCursorShapeConfig,
+)
 from prompt_toolkit.history import InMemoryHistory
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServerStdio
@@ -69,10 +74,25 @@ agent = Agent(
 )
 
 
-async def main():
+async def main(cli_args: argparse.Namespace):
+    """
+    Main async function for the agent.
+
+    Args:
+        cli_args: Optional pre-parsed command-line arguments.
+                  If None, arguments will be parsed internally.
+    """
+
+    vi_mode = False
+    cursor_shape = SimpleCursorShapeConfig(CursorShape.BLINKING_BEAM)
+    if cli_args and cli_args.vi:
+        print("vim motion mode enabled.")
+        vi_mode = True
+        cursor_shape = ModalCursorShapeConfig()
+
     message_history = []  # Initialize empty message history
     history = InMemoryHistory()
-    session = PromptSession(history=history)
+    session = PromptSession(history=history, vi_mode=vi_mode, cursor=cursor_shape)
 
     async with agent.run_mcp_servers():
         print("Agent started. Type '/reset' to clear history, '/exit' to quit.")
@@ -106,4 +126,11 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Run the LLM and Me agent.")
+    parser.add_argument(
+        "--vi", action="store_true", help="Enable Vi key bindings for input."
+    )
+    # Use parse_known_args if running directly, in case other args exist
+    cli_args, _ = parser.parse_known_args()
+
+    asyncio.run(main(cli_args))
