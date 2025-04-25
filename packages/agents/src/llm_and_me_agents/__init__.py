@@ -78,7 +78,9 @@ async def main():
         print("Agent started. Type '/reset' to clear history, '/exit' to quit.")
         while True:
             try:
-                user_input = (await session.prompt_async("\n> ")).strip()
+                user_input = (
+                    await session.prompt_async("\n> ", enable_open_in_editor=True)
+                ).strip()
             except (EOFError, KeyboardInterrupt):  # Handle Ctrl+D/Ctrl+C gracefully
                 break
 
