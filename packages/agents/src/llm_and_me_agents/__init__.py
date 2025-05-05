@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json  # Added for potential future use if needed
 import os
 import sys
 
@@ -16,7 +17,13 @@ from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServerStdio
 
 load_dotenv()
-configure(token=os.getenv("LOGFIRE_TOKEN"))
+
+# --- Privacy Mode State ---
+private_mode = False
+# --- End Privacy Mode State ---
+if os.getenv("LOGFIRE_TOKEN") is not None:
+    configure(token=os.getenv("LOGFIRE_TOKEN"))
+
 print(sys.executable)
 
 markdown_server = MCPServerStdio(
@@ -34,10 +41,20 @@ custom_git_server = MCPServerStdio(
     args=["run", "git-tools-mcp-server"],
 )
 
+cortex_server = MCPServerStdio(
+    "uv",
+    args=["run", "cortex-mcp-server"],
+)
+
 # Assuming mcp-server-git is already a command provided by the mcp-server-fetch package
 main_git_server = MCPServerStdio(
     "mcp-server-git",
     args=[],
+)
+
+filesystem_server = MCPServerStdio(
+    "npx",
+    args=["-y", "@modelcontextprotocol/server-filesystem", os.getcwd()],
 )
 
 
@@ -69,6 +86,7 @@ agent = Agent(
         macos_system_server,
         custom_git_server,
         main_git_server,
+        cortex_server,  # Added Cortex server
     ],
     system_prompt="You are a software engineering assistant, using en-AU locale. Do not try more than 3 times. If the user asks for json, return plain json text, nothing more",
 )
@@ -82,6 +100,7 @@ async def main(cli_args: argparse.Namespace):
         cli_args: Optional pre-parsed command-line arguments.
                   If None, arguments will be parsed internally.
     """
+    global private_mode  # Allow modification of the global state
 
     vi_mode = False
     cursor_shape = SimpleCursorShapeConfig(CursorShape.BLINKING_BEAM)
@@ -116,6 +135,22 @@ async def main(cli_args: argparse.Namespace):
                     message_history = []
                     print("Message history cleared.")
                     continue
+
+                if command == "toggle-privacy":
+                    private_mode = not private_mode
+                    if private_mode:
+                        os.environ["LLM_AND_ME_PRIVATE_MODE"] = "1"
+                        print(
+                            "Private mode enabled. Tool outputs may be saved locally instead of displayed."
+                        )
+                        message_history.extend("**Private mode enabled**")
+                    else:
+                        # Use pop to remove the key if it exists, avoiding KeyError
+                        os.environ.pop("LLM_AND_ME_PRIVATE_MODE", None)
+                        message_history.remove("**Private mode disabled**")
+                        print("Private mode disabled.")
+                    continue  # Skip sending the command to the agent
+
                 else:
                     print(f"Unknown command: {user_input}")
                     continue
