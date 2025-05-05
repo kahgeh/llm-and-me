@@ -9,6 +9,9 @@ dependencies = [
     "mcp-server-fetch>=2025.1.17", # Assuming this is a real PyPI package
     "pydantic-ai>=0.0.52",
     "pylint>=3.3.6", # Usually a dev dependency, but keeping as per original
+    "requests>=2.32.3",
+    "python-dotenv>=1.1.0",
+    "pydantic>=2.11.3",
 ]
 
 [build-system]
