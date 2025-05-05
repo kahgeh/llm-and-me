@@ -1,16 +1,23 @@
+import json
 import os
 import sys
 from typing import List, Literal, Optional
 
 import requests
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field, ValidationError
-
 
 # --- Constants ---
 CORTEX_API_BASE_URL = "https://api.getcortexapp.com/api/v1"
+PRIVATE_RELATIONSHIPS_OUTPUT_FILE = "cortex_team_relationships_private.json"
+load_dotenv()
 
 
 # --- Pydantic Models ---
+# Note: We are not defining the full Team model here from list_teams.py,
+# just using dicts after loading from JSON for simplicity in this module.
+# Note: We are not defining the full Team model here from list_teams.py,
+# just using dicts after loading from JSON for simplicity in this module.
 class Edge(BaseModel):
     child_team_tag: str = Field(..., alias="childTeamTag")
     parent_team_tag: str = Field(..., alias="parentTeamTag")
@@ -21,7 +28,7 @@ class TeamRelationshipsResponse(BaseModel):
     edges: List[Edge]
 
 
-# --- Helper Functions ---
+# --- Helper Function ---
 def _get_cortex_auth_headers() -> dict:
     """Retrieves Cortex API authentication headers."""
     api_token = os.getenv("CORTEX_API_TOKEN")
@@ -34,7 +41,7 @@ def _get_cortex_auth_headers() -> dict:
     return {"Authorization": f"Bearer {api_token}"}
 
 
-# --- Tool Function ---
+# --- Tool Functions ---
 def get_cortex_team_relationships() -> List[Edge]:
     """
     Retrieves team relationships (hierarchies) from the Cortex API.
@@ -66,15 +73,45 @@ def get_cortex_team_relationships() -> List[Edge]:
         return []
 
 
+def save_cortex_team_relationships_private(
+    output_file: str = PRIVATE_RELATIONSHIPS_OUTPUT_FILE,
+) -> str:
+    """
+    Fetches Cortex team relationships and saves them to a JSON file.
+
+    Args:
+        output_file: The path to the file where the relationships should be saved.
+                     Defaults to PRIVATE_RELATIONSHIPS_OUTPUT_FILE.
+
+    Returns:
+        The path to the saved file if successful, otherwise an empty string.
+    """
+    relationships = get_cortex_team_relationships()
+    if not relationships:
+        print("No relationships fetched, cannot save to file.", file=sys.stderr)
+        return ""
+
+    try:
+        # Convert Pydantic models to a list of dictionaries for JSON serialization
+        relationships_dict = [edge.model_dump(by_alias=True) for edge in relationships]
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(relationships_dict, f, indent=2)
+        print(f"Successfully saved {len(relationships)} relationships to {output_file}")
+        return output_file
+    except IOError as e:
+        print(f"Error writing to file {output_file}: {e}", file=sys.stderr)
+        return ""
+    except Exception as e:
+        print(f"An unexpected error occurred during saving: {e}", file=sys.stderr)
+        return ""
+
+
 # --- Main execution for testing ---
 if __name__ == "__main__":
-    print("Attempting to fetch Cortex team relationships...")
-    relationships = get_cortex_team_relationships()
-    if relationships:
-        print(f"Successfully fetched {len(relationships)} relationships:")
-        for edge in relationships:
-            print(
-                f"- Child: {edge.child_team_tag}, Parent: {edge.parent_team_tag}"
-            )
+    print("\nAttempting to save Cortex team relationships...")
+    saved_file_path = save_cortex_team_relationships_private()
+
+    if saved_file_path:
+        print(f"Relationships saved to: {saved_file_path}")
     else:
-        print("Failed to fetch relationships or none found.")
+        print("Failed to save relationships.")
