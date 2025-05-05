@@ -14,3 +14,5 @@ packages/tools/3rdParty
 **/*.egg-info
 
 dist
+
+*_private.json
