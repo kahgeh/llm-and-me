@@ -41,7 +41,46 @@ def _get_cortex_auth_headers() -> dict:
     return {"Authorization": f"Bearer {api_token}"}
 
 
-# --- Tool Functions ---
+def load_relationships_data(
+    file_path: str = PRIVATE_RELATIONSHIPS_OUTPUT_FILE,
+) -> List[Edge]:
+    """Loads team relationships data from the specified JSON file."""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            relationships_data = json.load(f)
+            if isinstance(relationships_data, list):
+                # Validate and parse each edge dictionary into an Edge object
+                edges = [
+                    Edge.model_validate(edge_data) for edge_data in relationships_data
+                ]
+                return edges
+            else:
+                print(
+                    f"Error: Expected a list in {file_path}, got {type(relationships_data)}",
+                    file=sys.stderr,
+                )
+                return []
+    except FileNotFoundError:
+        print(f"Error: Relationships file not found at {file_path}", file=sys.stderr)
+        print(
+            f"Hint: Ensure '{file_path}' exists. You might need to run 'get_team_relationships.py' first.",
+            file=sys.stderr,
+        )
+        return []
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON from {file_path}: {e}", file=sys.stderr)
+        return []
+    except IOError as e:
+        print(f"Error reading file {file_path}: {e}", file=sys.stderr)
+        return []
+    except Exception as e:  # Catch potential Pydantic validation errors too
+        print(
+            f"Error processing relationships data from {file_path}: {e}",
+            file=sys.stderr,
+        )
+        return []
+
+
 def get_cortex_team_relationships() -> List[Edge]:
     """
     Retrieves team relationships (hierarchies) from the Cortex API.

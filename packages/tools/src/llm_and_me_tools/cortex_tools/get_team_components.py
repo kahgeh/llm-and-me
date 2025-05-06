@@ -1,241 +1,157 @@
-import json
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import List, Set
 
-import requests
-from dotenv import load_dotenv
-from pydantic import BaseModel, Field, ValidationError
-
-# Constants
-CORTEX_API_BASE_URL = "https://api.getcortexapp.com/api/v1"
-PRIVATE_COMPONENTS_OUTPUT_FILE = "cortex_team_components_private.json"
-load_dotenv()
-
-
-class GitInfo(BaseModel):
-    alias: Optional[str] = None
-    basepath: Optional[str] = None
-    provider: Optional[str] = None
-    repository: Optional[str] = None
-    repository_url: Optional[str] = Field(None, alias="repositoryUrl")
-
-
-class HierarchyNode(BaseModel):
-    # Recursive model definition requires careful handling or simplification
-    # For now, defining basic fields. A full recursive definition might need Postponed Annotations.
-    # children: Optional[Dict[str, Any]] = None # Simplified to avoid recursion complexity for now
-    # definition: Optional[Dict[str, Any]] = None
-    description: Optional[str] = None
-    groups: Optional[List[str]] = None
-    id: Optional[str] = None
-    name: Optional[str] = None
-    # parents: Optional[Dict[str, Any]] = None # Simplified
-    tag: Optional[str] = None
-    type: Optional[str] = None
+# Assuming these sibling modules exist and contain the necessary functions/constants
+from llm_and_me_tools.cortex_tools.get_descendent_teams import get_descendant_teams
+from llm_and_me_tools.cortex_tools.list_components import (
+    PRIVATE_COMPONENTS_OUTPUT_FILE,
+    Entity,
+    load_components_data,
+)
+from llm_and_me_tools.cortex_tools.list_team_relationships import (
+    PRIVATE_RELATIONSHIPS_OUTPUT_FILE,
+    load_relationships_data,
+)
+from llm_and_me_tools.cortex_tools.list_teams import (
+    PRIVATE_MODE_OUTPUT_FILE as PRIVATE_TEAMS_OUTPUT_FILE,
+)
+from llm_and_me_tools.cortex_tools.list_teams import (
+    create_tag_to_team_map,
+    load_teams_data,
+)
 
 
-class Hierarchy(BaseModel):
-    children: Optional[List[HierarchyNode]] = None
-    parents: Optional[List[HierarchyNode]] = None
-
-
-class Link(BaseModel):
-    description: Optional[str] = None
-    name: Optional[str] = None
-    type: Optional[str] = None
-    url: Optional[str] = None
-
-
-class MemberRole(BaseModel):
-    name: Optional[str] = None
-    source: Optional[str] = None
-
-
-class MemberSource(BaseModel):
-    external_group_id: Optional[str] = Field(None, alias="externalGroupId")
-    external_id: Optional[str] = Field(None, alias="externalId")
-    provider: Optional[str] = None
-    type: Optional[str] = None
-
-
-class Member(BaseModel):
-    description: Optional[str] = None
-    email: Optional[str] = None
-    name: Optional[str] = None
-    roles: Optional[List[MemberRole]] = None
-    sources: Optional[List[MemberSource]] = None
-
-
-class MetadataItem(BaseModel):
-    key: Optional[str] = None
-    value: Optional[Any] = None  # Value can be complex
-
-
-class OwnerIndividual(BaseModel):
-    description: Optional[str] = None
-    email: Optional[str] = None
-
-
-class OwnerTeam(BaseModel):
-    tag: str
-    name: Optional[str] = None
-    description: Optional[str] = None
-    id: Optional[str] = None
-    inheritance: Optional[str] = None
-    is_archived: Optional[bool] = Field(None, alias="isArchived")
-    provider: Optional[str] = None
-
-
-class Owners(BaseModel):
-    individuals: Optional[List[OwnerIndividual]] = None
-    teams: Optional[List[OwnerTeam]] = None
-
-
-class SlackChannel(BaseModel):
-    description: Optional[str] = None
-    name: Optional[str] = None
-    notifications_enabled: Optional[bool] = Field(None, alias="notificationsEnabled")
-
-
-class Entity(BaseModel):
-    tag: str
-    name: str
-    type: str
-    description: Optional[str] = None
-    git: Optional[GitInfo] = None
-    groups: Optional[List[str]] = None
-    hierarchy: Optional[Hierarchy] = None
-    id: Optional[str] = None
-    is_archived: Optional[bool] = Field(None, alias="isArchived")
-    last_updated: Optional[str] = Field(
-        None, alias="lastUpdated"
-    )  # Consider using datetime
-    links: Optional[List[Link]] = None
-    members: Optional[List[Member]] = None
-    metadata: Optional[List[MetadataItem]] = None
-    owners: Optional[Owners] = None  # Removed alias="ownersV2"
-    slack_channels: Optional[List[SlackChannel]] = Field(None, alias="slackChannels")
-
-
-class EntityListResponse(BaseModel):
-    entities: List[Entity]
-    page: int
-    total: int
-    total_pages: int = Field(alias="totalPages")
-
-
-# --- Helper Functions ---
-
-
-def _get_cortex_auth_headers() -> Dict[str, str]:
-    """Retrieves Cortex API token from environment variables."""
-    token = os.getenv("CORTEX_API_TOKEN")
-    if not token:
-        print(
-            "Error: CORTEX_API_TOKEN environment variable not set.",
-            file=sys.stderr,
-        )
-        sys.exit(1)  # Or raise an exception
-    return {"Authorization": f"Bearer {token}", "Accept": "application/json"}
-
-
-# --- Core Tool Function ---
-
-
-def get_cortex_components() -> List[Entity]:
+def get_team_components(top_level_team_tag: str) -> List[Entity]:
     """
-    Retrieves Cortex catalog entities of type 'service' owned by the specified teams.
+    Loads teams, relationships, and components from JSON files,
+    finds all descendant teams of the given top-level team,
+    and returns components owned by any of these teams.
 
     Args:
-        team_tags: A list of team tags (e.g., ['my-team', 'another-team']).
+        top_level_team_tag: The tag of the top-level team.
 
     Returns:
-        A list of dictionaries, each representing a service entity.
+        A list of Entity objects representing the components owned by the
+        top-level team and its descendants.
     """
+    # 1. Load data
+    print(f"Loading teams data from {PRIVATE_TEAMS_OUTPUT_FILE}...", file=sys.stderr)
+    teams_data = load_teams_data(PRIVATE_TEAMS_OUTPUT_FILE)
+    print(
+        f"Loading relationships data from {PRIVATE_RELATIONSHIPS_OUTPUT_FILE}...",
+        file=sys.stderr,
+    )
+    relationships_data = load_relationships_data(PRIVATE_RELATIONSHIPS_OUTPUT_FILE)
+    print(
+        f"Loading components data from {PRIVATE_COMPONENTS_OUTPUT_FILE}...",
+        file=sys.stderr,
+    )
+    # Load components using the imported function
+    all_components = load_components_data(PRIVATE_COMPONENTS_OUTPUT_FILE)
 
-    headers = _get_cortex_auth_headers()
-    all_entities: List[Entity] = []
-    page = 0
-    page_size = 500  # Max page size seems to be 1000, but 100 is safer
+    # 2. Prepare team map and find descendants
+    print("Creating team map...", file=sys.stderr)
+    tag_to_team_map = create_tag_to_team_map(teams_data)
 
-    print("Fetching all components", file=sys.stderr)
+    if top_level_team_tag not in tag_to_team_map:
+        print(
+            f"Error: Top-level team tag '{top_level_team_tag}' not found in teams data.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
-    while True:
-        params = {
-            "types": ["service"],
-            "pageSize": page_size,
-            "page": page,
-            "includeOwners": "true",
-        }
-        api_url = f"{CORTEX_API_BASE_URL}/catalog"
+    print(f"Finding descendant teams for '{top_level_team_tag}'...", file=sys.stderr)
+    descendant_teams = get_descendant_teams(
+        top_level_team_tag, relationships_data, tag_to_team_map
+    )
 
-        try:
-            response = requests.get(api_url, headers=headers, params=params, timeout=30)
-            response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+    # Include the top-level team itself in the set of relevant teams
+    # Use team_tag attribute from the Team model in get_descendent_teams.py
+    relevant_team_tags: Set[str] = {team.team_tag for team in descendant_teams}
+    relevant_team_tags.add(top_level_team_tag)
+    print(
+        f"Found {len(relevant_team_tags)} relevant teams (including descendants and self).",
+        file=sys.stderr,
+    )
 
-            response_data = response.json()
-            validated_response = EntityListResponse.model_validate(response_data)
+    # 3. Filter components
+    print("Filtering components by ownership...", file=sys.stderr)
+    team_components: List[Entity] = []
+    for component in all_components:
+        if component.owners and component.owners.teams:
+            component_owner_tags = {
+                owner.tag for owner in component.owners.teams if owner.tag
+            }
+            # Check if any of the component's owner teams are in the relevant set
+            if not component_owner_tags.isdisjoint(relevant_team_tags):
+                team_components.append(component)
 
-            all_entities.extend(validated_response.entities)
-
-            print(
-                f"Page {page + 1}/{validated_response.total_pages}: Fetched {len(validated_response.entities)} entities.",
-                file=sys.stderr,
-            )
-
-            if validated_response.page >= validated_response.total_pages - 1:
-                break  # Exit loop if last page reached
-
-            page += 1
-            break
-
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching data from Cortex API: {e}", file=sys.stderr)
-            # Decide how to handle: return partial data, raise exception, etc.
-            # For now, return what we have gathered so far.
-            break
-        except ValidationError as e:
-            print(f"Error validating Cortex API response: {e}", file=sys.stderr)
-            print(
-                f"Response JSON: {response.text[:500]}...", file=sys.stderr
-            )  # Log part of the problematic response
-            break
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}", file=sys.stderr)
-            break
-
-    return all_entities
+    print(
+        f"Found {len(team_components)} components owned by '{top_level_team_tag}' or its descendants.",
+        file=sys.stderr,
+    )
+    return team_components
 
 
-def save_cortex_components_private(
-    components: List[Entity], output_file: str = PRIVATE_COMPONENTS_OUTPUT_FILE
-) -> str:
-    """Saves the fetched component data (list of Entity objects) to a JSON file."""
-    try:
-        # Convert Pydantic models to dictionaries for JSON serialization
+# Note: The main block and list/save functions were moved to list_components.py
+
+
+# --- Main block for standalone execution ---
+if __name__ == "__main__":
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(
+        description="Get Cortex components owned by a team and its descendants."
+    )
+    parser.add_argument(
+        "top_level_team_tag",
+        help="The tag of the top-level team to query.",
+    )
+    parser.add_argument(
+        "--json",
+        default=False,
+        action="store_true",
+        help="Output as JSON.Suppress all other output.",
+    )
+    args = parser.parse_args()
+
+    if args.json:
+        original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, "w")
+
+    print(
+        f"Getting components for team '{args.top_level_team_tag}' and its descendants...",
+        file=sys.stderr,
+    )
+    components = get_team_components(args.top_level_team_tag)
+
+    if components:
+        # Convert Pydantic models to dictionaries for JSON output
         components_dict_list = [
             component.model_dump(exclude_none=True) for component in components
         ]
-        with open(output_file, "w") as f:
-            json.dump(components_dict_list, f, indent=2)
-        print(f"Successfully saved components to {output_file}", file=sys.stderr)
-        return output_file
-    except IOError as e:
-        print(f"Error writing to file {output_file}: {e}", file=sys.stderr)
-        sys.exit(1)
+        # Restore stdout
+        if args.json:
+            sys.stdout.close()
+            sys.stdout = original_stdout
 
+        print(json.dumps(components_dict_list, indent=2))
+        if args.json:
+            original_stdout = sys.stdout
+            sys.stdout = open(os.devnull, "w")
 
-# --- Main block for potential standalone execution ---
-if __name__ == "__main__":
-    # Example usage: python get_team_components.py team-tag1 team-tag2
-    if len(sys.argv) < 2:
         print(
-            "Usage: python get_team_components.py <team_tag1> [team_tag2] ...",
+            f"\nSuccessfully retrieved {len(components)} components.", file=sys.stderr
+        )
+    else:
+        print(
+            f"No components found for team '{args.top_level_team_tag}' or its descendants.",
             file=sys.stderr,
         )
-        sys.exit(1)
 
-    teams_to_query = sys.argv[1:]
-    components = get_cortex_components()
-    save_cortex_components_private(components)
+    # Restore stdout
+    if args.json:
+        sys.stdout.close()
+        sys.stdout = original_stdout

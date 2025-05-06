@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import json  # Added for saving data in private mode
 import os
-from typing import Any, List, Optional, Union  # Added Union for return type
+import sys
+from typing import Dict, List, Optional, Union  # Added Union for return type, Added Dict
 
 import requests
 from dotenv import load_dotenv
@@ -185,6 +186,62 @@ def save_cortex_teams_private(team_name_pattern: Optional[str] = None) -> str:
         return f"Error: Failed to save data locally in private mode: {e}"
     except Exception as e:  # Catch potential model_dump errors
         return f"Error: Failed processing data for local saving: {e}"
+
+
+class _Team(BaseModel):
+    id: str = Field(..., alias="teamId")
+    name: str = Field(..., alias="name")
+
+
+def create_tag_to_team_map(teams_data: List[dict]) -> Dict[str, _Team]:
+    """Creates a mapping from team tag to team name."""
+    tag_to_team_map = {}
+    for team in teams_data:
+        tag = team.get("team_tag")  # Corresponds to Team.team_tag
+        id = team.get("id")
+        metadata = team.get("metadata")
+        name = (
+            metadata.get("name") if isinstance(metadata, dict) else None
+        )  # Corresponds to Metadata.name
+
+        if tag and name and id:
+            tag_to_team_map[tag] = _Team(teamId=id, name=name)
+        elif tag:
+            print(
+                f"Warning: Missing 'name' in metadata for team tag '{tag}'.",
+                file=sys.stderr,
+            )
+        # else: # Don't warn if tag itself is missing, less critical here
+        # print(f"Warning: Missing 'team_tag' in team data entry: {team}", file=sys.stderr)
+    return tag_to_team_map
+
+
+def load_teams_data(file_path: str = PRIVATE_MODE_OUTPUT_FILE) -> List[dict]:
+    """Loads team data from the specified JSON file."""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            teams_data = json.load(f)
+            if isinstance(teams_data, list):
+                return teams_data
+            else:
+                print(
+                    f"Error: Expected a list in {file_path}, got {type(teams_data)}",
+                    file=sys.stderr,
+                )
+                return []
+    except FileNotFoundError:
+        print(f"Error: Teams file not found at {file_path}", file=sys.stderr)
+        print(
+            f"Hint: Ensure '{file_path}' exists. You might need to run the script that generates it.",
+            file=sys.stderr,
+        )
+        return []
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON from {file_path}: {e}", file=sys.stderr)
+        return []
+    except IOError as e:
+        print(f"Error reading file {file_path}: {e}", file=sys.stderr)
+        return []
 
 
 if __name__ == "__main__":

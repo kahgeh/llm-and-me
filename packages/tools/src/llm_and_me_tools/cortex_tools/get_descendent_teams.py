@@ -1,15 +1,21 @@
 import argparse
-import json
 import sys
 from typing import Dict, List, Set
 
 from pydantic import BaseModel, Field
 
-from llm_and_me_tools.cortex_tools.get_team_relationships import (
+from llm_and_me_tools.cortex_tools.list_team_relationships import (
     PRIVATE_RELATIONSHIPS_OUTPUT_FILE,
     Edge,
+    load_relationships_data,
+    # create_tag_to_team_map was incorrectly imported here
 )
-from llm_and_me_tools.cortex_tools.list_teams import PRIVATE_MODE_OUTPUT_FILE
+from llm_and_me_tools.cortex_tools.list_teams import (
+    PRIVATE_MODE_OUTPUT_FILE,
+    _Team,
+    create_tag_to_team_map,  # Add missing import
+    load_teams_data,
+)
 
 # Pydantic v2: Use model_config dictionary
 # Pydantic v1: Use Config class
@@ -24,103 +30,6 @@ class Team(BaseModel):
     team_tag: str = Field(..., alias="teamTag")
     parent_team_tag: str = Field(..., alias="parentTeamTag")
     team_name: str = Field(..., alias="name")
-
-
-class _Team(BaseModel):
-    id: str = Field(..., alias="teamId")
-    name: str = Field(..., alias="name")
-
-
-# --- Helper Functions ---
-def _load_teams_data(file_path: str = PRIVATE_MODE_OUTPUT_FILE) -> List[dict]:
-    """Loads team data from the specified JSON file."""
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            teams_data = json.load(f)
-            if isinstance(teams_data, list):
-                return teams_data
-            else:
-                print(
-                    f"Error: Expected a list in {file_path}, got {type(teams_data)}",
-                    file=sys.stderr,
-                )
-                return []
-    except FileNotFoundError:
-        print(f"Error: Teams file not found at {file_path}", file=sys.stderr)
-        print(
-            f"Hint: Ensure '{file_path}' exists. You might need to run the script that generates it.",
-            file=sys.stderr,
-        )
-        return []
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON from {file_path}: {e}", file=sys.stderr)
-        return []
-    except IOError as e:
-        print(f"Error reading file {file_path}: {e}", file=sys.stderr)
-        return []
-
-
-def _load_relationships_data(
-    file_path: str = PRIVATE_RELATIONSHIPS_OUTPUT_FILE,
-) -> List[Edge]:
-    """Loads team relationships data from the specified JSON file."""
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            relationships_data = json.load(f)
-            if isinstance(relationships_data, list):
-                # Validate and parse each edge dictionary into an Edge object
-                edges = [
-                    Edge.model_validate(edge_data) for edge_data in relationships_data
-                ]
-                return edges
-            else:
-                print(
-                    f"Error: Expected a list in {file_path}, got {type(relationships_data)}",
-                    file=sys.stderr,
-                )
-                return []
-    except FileNotFoundError:
-        print(f"Error: Relationships file not found at {file_path}", file=sys.stderr)
-        print(
-            f"Hint: Ensure '{file_path}' exists. You might need to run 'get_team_relationships.py' first.",
-            file=sys.stderr,
-        )
-        return []
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON from {file_path}: {e}", file=sys.stderr)
-        return []
-    except IOError as e:
-        print(f"Error reading file {file_path}: {e}", file=sys.stderr)
-        return []
-    except Exception as e:  # Catch potential Pydantic validation errors too
-        print(
-            f"Error processing relationships data from {file_path}: {e}",
-            file=sys.stderr,
-        )
-        return []
-
-
-def _create_tag_to_team_map(teams_data: List[dict]) -> Dict[str, _Team]:
-    """Creates a mapping from team tag to team name."""
-    tag_to_team_map = {}
-    for team in teams_data:
-        tag = team.get("team_tag")  # Corresponds to Team.team_tag
-        id = team.get("id")
-        metadata = team.get("metadata")
-        name = (
-            metadata.get("name") if isinstance(metadata, dict) else None
-        )  # Corresponds to Metadata.name
-
-        if tag and name and id:
-            tag_to_team_map[tag] = _Team(teamId=id, name=name)
-        elif tag:
-            print(
-                f"Warning: Missing 'name' in metadata for team tag '{tag}'.",
-                file=sys.stderr,
-            )
-        # else: # Don't warn if tag itself is missing, less critical here
-        # print(f"Warning: Missing 'team_tag' in team data entry: {team}", file=sys.stderr)
-    return tag_to_team_map
 
 
 # --- Tool Function ---
@@ -167,7 +76,7 @@ def get_descendant_teams(
             for child_team in adj[current_team]:
                 # Process child only if it hasn't been processed yet
                 if child_team not in processed_teams:
-                    # Get the name of the CHILD team
+                    # Get tHe name of the CHILD team
                     _team = tag_to_team_map.get(child_team)
                     child_name = _team.name
                     id = _team.id
@@ -228,17 +137,17 @@ if __name__ == "__main__":
     args = parse_args()
 
     print(f"Loading team data from: {args.teams_file}")
-    teams_data = _load_teams_data(args.teams_file)
+    teams_data = load_teams_data(args.teams_file)
     if not teams_data:
         sys.exit(1)
 
     print(f"Loading relationship data from: {args.relationships_file}")
-    relationships = _load_relationships_data(args.relationships_file)
+    relationships = load_relationships_data(args.relationships_file)
     if not relationships:
         sys.exit(1)
 
     print("Creating team tag to team map...")
-    tag_map = _create_tag_to_team_map(teams_data)
+    tag_map = create_tag_to_team_map(teams_data)
     if not tag_map:
         print(
             "Warning: Team tag map is empty. Names might not be resolved.",

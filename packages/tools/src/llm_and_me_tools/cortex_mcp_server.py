@@ -20,7 +20,15 @@ def main():
         )
         from .cortex_tools.get_team_relationships import (
             get_cortex_team_relationships,
+            save_cortex_team_relationships_private, # Assuming this exists and should be added
         )
+        # Import component listing and saving functions
+        from .cortex_tools.list_components import (
+            list_cortex_components,
+            save_cortex_components_private as save_cortex_components_private_func, # Alias to avoid name clash if needed elsewhere
+        )
+        # Import the team component filtering function
+        from .cortex_tools.get_team_components import get_team_components
     except ImportError as e:
         print(f"Error importing Cortex tool functions: {e}", file=sys.stderr)
         print(
@@ -35,9 +43,16 @@ def main():
     )
 
     # Add the two new tools instead of the old combined one
+    # Team tools
     mcp.add_tool(get_cortex_teams_public)
     mcp.add_tool(save_cortex_teams_private)
+    # Relationship tools
     mcp.add_tool(get_cortex_team_relationships)
+    # mcp.add_tool(save_cortex_team_relationships_private) # Uncomment if this tool exists and is desired
+    # Component tools
+    mcp.add_tool(list_cortex_components)
+    mcp.add_tool(save_cortex_components_private_func)
+    mcp.add_tool(get_team_components) # Tool to filter components by team hierarchy
     mcp.run()
 
 
