@@ -29,6 +29,8 @@ def main():
         )
         # Import the team component filtering function
         from .cortex_tools.get_team_components import get_team_components
+        # Import the entity documentation function
+        from .cortex_tools.get_entity_docs import get_cortex_entity_docs
     except ImportError as e:
         print(f"Error importing Cortex tool functions: {e}", file=sys.stderr)
         print(
@@ -52,7 +54,9 @@ def main():
     # Component tools
     mcp.add_tool(list_cortex_components)
     mcp.add_tool(save_cortex_components_private_func)
-    mcp.add_tool(get_team_components) # Tool to filter components by team hierarchy
+    mcp.add_tool(get_team_components)  # Tool to filter components by team hierarchy
+    # Entity documentation tool
+    mcp.add_tool(get_cortex_entity_docs)
     mcp.run()
 
 
