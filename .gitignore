@@ -16,3 +16,4 @@ packages/tools/3rdParty
 dist
 
 *_private.json
+*.db
