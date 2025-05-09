@@ -46,6 +46,11 @@ cortex_server = MCPServerStdio(
     args=["run", "cortex-mcp-server"],
 )
 
+openapi_server = MCPServerStdio(
+    "uv",
+    args=["run", "openapi-mcp-server"],
+)
+
 # Assuming mcp-server-git is already a command provided by the mcp-server-fetch package
 main_git_server = MCPServerStdio(
     "mcp-server-git",
@@ -87,6 +92,7 @@ agent = Agent(
         custom_git_server,
         main_git_server,
         cortex_server,  # Added Cortex server
+        openapi_server,
     ],
     system_prompt="You are a software engineering assistant, using en-AU locale. Do not try more than 3 times. If the user asks for json, return plain json text, nothing more",
 )

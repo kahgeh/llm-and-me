@@ -3,8 +3,8 @@ import json
 import sys
 
 
-def generate_api_tree(openapi_spec):
-    """Generates a tree structure of API paths from an OpenAPI specification."""
+def generate_api_tree(openapi_spec: dict) -> dict:
+    """Generates a tree structure of API paths from an OpenAPI specification dictionary."""
     paths = openapi_spec.get("paths", {})
     tree = {}
     for path, methods in paths.items():
@@ -14,10 +14,45 @@ def generate_api_tree(openapi_spec):
             if segment not in current_level:
                 current_level[segment] = {}
             current_level = current_level[segment]
-        for method in methods:
-            current_level[f"[{method.upper()}]"] = None  # Mark as a leaf node
-
+        for method_key in methods: # methods is a dict, method_key is e.g. 'get', 'post'
+            current_level[f"[{method_key.upper()}]"] = None  # Mark as a leaf node
     return tree
+
+
+def get_openapi_path_tree_from_content(openapi_content: str, content_type: str = "yaml") -> dict:
+    """
+    Parses OpenAPI content (YAML or JSON string) and generates a tree of API paths.
+    content_type can be 'yaml' or 'json'.
+    """
+    spec: dict
+
+    normalized_content_type = content_type.lower()
+
+    if normalized_content_type == "yaml":
+        try:
+            spec = yaml.safe_load(openapi_content)
+        except yaml.YAMLError as e:
+            raise ValueError(f"Error parsing YAML content: {e}") from e
+    elif normalized_content_type == "json":
+        try:
+            spec = json.loads(openapi_content)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Error parsing JSON content: {e}") from e
+    else:
+        raise ValueError("Unsupported content_type. Use 'yaml' or 'json'.")
+
+    if not isinstance(spec, dict):
+        raise ValueError(
+            "Parsed OpenAPI content did not result in a dictionary. "
+            "Please ensure the content is valid."
+        )
+
+    if "paths" not in spec:
+        raise ValueError(
+            "Invalid OpenAPI specification format. Missing 'paths' section."
+        )
+
+    return generate_api_tree(spec)
 
 
 def print_tree(tree, prefix="", is_last=True):
@@ -45,22 +80,16 @@ def main():
     try:
         with open(openapi_file, "r") as f:
             if openapi_file.endswith((".yaml", ".yml")):
-                openapi_spec = yaml.safe_load(f)
+                openapi_spec_content = f.read()
+                api_tree = get_openapi_path_tree_from_content(openapi_spec_content, "yaml")
             elif openapi_file.endswith(".json"):
-                openapi_spec = json.load(f)
+                openapi_spec_content = f.read()
+                api_tree = get_openapi_path_tree_from_content(openapi_spec_content, "json")
             else:
                 print(
                     "Error: Unsupported file format. Please provide a YAML or JSON OpenAPI specification."
                 )
                 sys.exit(1)
-
-        if not isinstance(openapi_spec, dict) or "paths" not in openapi_spec:
-            print(
-                "Error: Invalid OpenAPI specification format. Missing 'paths' section."
-            )
-            sys.exit(1)
-
-        api_tree = generate_api_tree(openapi_spec)
 
         if api_tree:
             print("paths/")
@@ -75,11 +104,8 @@ def main():
     except FileNotFoundError:
         print(f"Error: File not found: {openapi_file}")
         sys.exit(1)
-    except yaml.YAMLError as e:
-        print(f"Error parsing YAML: {e}")
-        sys.exit(1)
-    except json.JSONDecodeError as e:
-        print(f"Error parsing JSON: {e}")
+    except ValueError as e: # Catch parsing errors from get_openapi_path_tree_from_content
+        print(f"Error processing OpenAPI content: {e}")
         sys.exit(1)
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
@@ -88,4 +114,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

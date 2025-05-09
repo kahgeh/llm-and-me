@@ -19,6 +19,7 @@ git-tools-mcp-server = "llm_and_me_tools:git_tools_main"
 macos-mcp-server = "llm_and_me_tools:macos_main"
 markdown-mcp-server = "llm_and_me_tools:markdown_main"
 cortex-mcp-server = "llm_and_me_tools:cortex_main" # Added Cortex server
+openapi-mcp-server = "llm_and_me_tools.openapi_mcp_server:main" # Added OpenAPI server
 json-to-sqlite = "llm_and_me_tools.json_to_sqlite:main"
 
 [tool.setuptools.packages.find]
