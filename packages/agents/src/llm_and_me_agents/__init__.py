@@ -62,6 +62,20 @@ filesystem_server = MCPServerStdio(
     args=["-y", "@modelcontextprotocol/server-filesystem", os.getcwd()],
 )
 
+sqlite_server = MCPServerStdio(
+    "docker",
+    args=[
+        "run",
+        "--rm",
+        "-i",
+        "-v",
+        f"{os.getcwd()}/data:/mcp",
+        "mcp/sqlite",
+        "--db-path",
+        "/mcp/all.db",
+    ],
+)
+
 
 # Prompt the user to choose the foundation model before creating the agent.
 def select_model() -> str:
@@ -93,6 +107,8 @@ agent = Agent(
         main_git_server,
         cortex_server,  # Added Cortex server
         openapi_server,
+        filesystem_server,
+        sqlite_server,
     ],
     system_prompt="You are a software engineering assistant, using en-AU locale. Do not try more than 3 times. If the user asks for json, return plain json text, nothing more",
 )
