@@ -3,7 +3,7 @@
 import os
 
 # Import the centralized function for finding the repo root
-from .repo_root_finder import get_repo_root
+from llm_and_me_tools.git_tools.repo_root_finder import get_repo_root
 
 
 def get_commit_conventions() -> str:
