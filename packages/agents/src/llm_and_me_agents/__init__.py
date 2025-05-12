@@ -105,7 +105,7 @@ agent = Agent(
         macos_system_server,
         custom_git_server,
         main_git_server,
-        # cortex_server,
+        cortex_server,
         openapi_server,
         filesystem_server,
         sqlite_server,
