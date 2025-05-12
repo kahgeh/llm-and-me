@@ -22,22 +22,28 @@ class GitInfo(BaseModel):
 
 
 class HierarchyNode(BaseModel):
-    # Recursive model definition requires careful handling or simplification
-    # For now, defining basic fields. A full recursive definition might need Postponed Annotations.
-    # children: Optional[Dict[str, Any]] = None # Simplified to avoid recursion complexity for now
-    # definition: Optional[Dict[str, Any]] = None
     description: Optional[str] = None
     groups: Optional[List[str]] = None
     id: Optional[str] = None
     name: Optional[str] = None
     # parents: Optional[Dict[str, Any]] = None # Simplified
     tag: Optional[str] = None
+    tag: Optional[str] = None
+    type: Optional[str] = None
+
+
+# Define a simpler reference model to break recursion for schema generation
+class HierarchyNodeRef(BaseModel):
+    tag: Optional[str] = None
+    id: Optional[str] = None
+    name: Optional[str] = None
     type: Optional[str] = None
 
 
 class Hierarchy(BaseModel):
-    children: Optional[List[HierarchyNode]] = None
-    parents: Optional[List[HierarchyNode]] = None
+    # Use List[Any] to definitively break schema recursion for Gemini
+    children: Optional[List[Any]] = None
+    parents: Optional[List[Any]] = None
 
 
 class Link(BaseModel):

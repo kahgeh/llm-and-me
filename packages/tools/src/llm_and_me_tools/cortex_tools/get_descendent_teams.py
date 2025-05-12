@@ -32,11 +32,17 @@ class Team(BaseModel):
     team_name: str = Field(..., alias="name")
 
 
+# Define a model for key-value pairs to avoid Dict schema issues
+class TeamMapEntry(BaseModel):
+    tag: str
+    team: _Team
+
+
 # --- Tool Function ---
 def get_descendant_teams(
     top_level_team_tag: str,
     all_relationships: List[Edge],
-    tag_to_team_map: Dict[str, _Team],
+    tag_to_team_map_list: List[TeamMapEntry],  # Changed from Dict to List of pairs
 ) -> List[Team]:
     """
     Finds all descendant team names for a given top-level team tag.
@@ -52,6 +58,11 @@ def get_descendant_teams(
         A sorted list of team names that are descendants of the top_level_team_tag.
         If a name is not found for a tag, the tag itself is used as a fallback.
     """
+    # Convert the input list of pairs back into a dictionary for efficient lookup
+    tag_to_team_map: Dict[str, _Team] = {
+        entry.tag: entry.team for entry in tag_to_team_map_list
+    }
+
     # Build an adjacency list (parent -> list of children) for efficient lookup
     adj: Dict[str, List[str]] = {}
     for edge in all_relationships:
@@ -155,15 +166,22 @@ if __name__ == "__main__":
         )
         # Continue execution, but names will likely be tags
 
+    # Convert the dictionary map to a list of TeamMapEntry objects
+    tag_map_list = [
+        TeamMapEntry(tag=tag, team=team) for tag, team in tag_map.items()
+    ]
+
     print(f"\nFinding descendants for team tag: {args.team_tag}")
-    descendant_teams_list = get_descendant_teams(args.team_tag, relationships, tag_map)
+    descendant_teams_list = get_descendant_teams(
+        args.team_tag, relationships, tag_map_list
+    )  # Pass the list
 
     if descendant_teams_list:
-        print("\nDescendant Teams (Child Tag : Parent Tag : Team Name):")
+        print("\nDescendant Teams (ID : Child Tag : Parent Tag : Team Name):")
         # The function now returns a sorted list of Team objects
         for team in descendant_teams_list:
             print(
-                f"- {team.id} {team.team_tag} (Parent: {team.parent_team_tag}) : {team.team_name}"
+                f"- {team.id} : {team.team_tag} (Parent: {team.parent_team_tag}) : {team.team_name}"
             )
     else:
         print(f"No descendants found for team tag '{args.team_tag}'.")
