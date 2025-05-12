@@ -2,7 +2,9 @@ import argparse
 import asyncio
 import json  # Added for potential future use if needed
 import os
+import subprocess
 import sys
+import tempfile
 
 from dotenv import load_dotenv
 from logfire import configure
@@ -162,6 +164,11 @@ async def main(cli_args: argparse.Namespace):
                 if command == "reset":
                     message_history = []
                     print("Message history cleared.")
+                    continue
+
+                if command == "edit":
+                    session.default_buffer.reset()
+                    session.default_buffer.open_in_editor()
                     continue
 
                 if command == "toggle-privacy":
