@@ -1,22 +1,21 @@
-from fastapi_mcp import MCPToolServer
-from .newrelic_tools import get_application_metrics
-from .newrelic_tools.get_apm_entity_by_tag import get_apm_entities_by_component_tag
+from fastmcp import FastMCP
 
-# Instantiate the server
-server = MCPToolServer(
-    title="New Relic MCP Server",
-    description="MCP server for New Relic tools.",
-    version="0.1.0",
+from .newrelic_tools.get_apm_entity_by_tag import get_prod_apm_entities_by_component_tag
+from .newrelic_tools.get_application_metrics import get_application_metrics
+from .newrelic_tools.save_application_metrics_to_sqlite import (
+    save_application_metrics_to_sqlite,
 )
 
-# Add tools to the server
-# The tool's name, title, description, input_model, and output_model
-# will be inferred by fastapi-mcp from the function's properties.
-server.add_tool(get_application_metrics)
-server.add_tool(get_apm_entities_by_component_tag)
 
 def main():
-    server.run()
+    mcp = FastMCP("New Relic MCP Server", description="MCP server for New Relic tools.")
+
+    mcp.add_tool(get_application_metrics)
+    mcp.add_tool(get_prod_apm_entities_by_component_tag)
+    mcp.add_tool(save_application_metrics_to_sqlite)
+    mcp.run()
+
 
 if __name__ == "__main__":
+    print(f"Attempting to start Newrelic MCP server ({__file__})...")
     main()
