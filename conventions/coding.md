@@ -8,6 +8,13 @@
 ## Ensure each tool is implemented in such a way that it can be called directly as a script
 
 - Provide the `if __name__ == "__main__"` block, which implements command line argument parsing if required
+- When importing functions from other internal tools use fully qualified names(include package name) so that the import can successfully resolve referenced modules when executing as a script
+  e.g.
+
+```
+from llm_and_me_tools.openapi_tools.openapi_to_tree import (
+    get_openapi_path_tree_as_string,
+```
 
 ## Describe the tool close to the function
 
