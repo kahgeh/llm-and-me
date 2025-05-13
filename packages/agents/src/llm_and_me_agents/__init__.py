@@ -60,6 +60,11 @@ processing_history_server = MCPServerStdio(
     args=["run", "processing-history-mcp-server"],
 )
 
+datetime_server = MCPServerStdio(
+    "uv",
+    args=["run", "datetime-mcp-server"],
+)
+
 # Assuming mcp-server-git is already a command provided by the mcp-server-fetch package
 main_git_server = MCPServerStdio(
     "mcp-server-git",
@@ -120,6 +125,7 @@ agent = Agent(
         filesystem_server,
         sqlite_server,
         processing_history_server,
+        datetime_server,
     ],
     system_prompt="You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more",
 )

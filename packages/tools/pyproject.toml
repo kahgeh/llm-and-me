@@ -23,6 +23,7 @@ openapi-mcp-server = "llm_and_me_tools.openapi_mcp_server:main" # Added OpenAPI 
 json-to-sqlite = "llm_and_me_tools.json_to_sqlite:main"
 processing-history-mcp-server= "llm_and_me_tools.processing_history_mcp_server:main" # Added New Relic server
 newrelic-mcp-server = "llm_and_me_tools.newrelic_mcp_server:main" # Added New Relic server
+datetime-mcp-server = "llm_and_me_tools.datetime_mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -17,4 +17,5 @@ __all__ = [
     openapi_main,
     newrelic_main,
     processing_history_main,
+    datetime_main,
 ]
