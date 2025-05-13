@@ -1,15 +1,17 @@
 import argparse
 import json
-import os
 from typing import List, Optional
 
 import requests
-from dotenv import load_dotenv
+from dotenv import (
+    load_dotenv,
+)  # Keep for direct script execution, though api_key_selector also calls it
 from pydantic import BaseModel, Field
 
-NEW_RELIC_API_KEY_ENV_VAR = "NEW_RELIC_API_KEY"
+from llm_and_me_tools.newrelic_tools.api_key_selector import get_new_relic_api_key
+
 NERDGRAPH_API_URL = "https://api.newrelic.com/graphql"
-load_dotenv()
+load_dotenv()  # Ensures .env is loaded if this script is run directly
 
 
 class NerdGraphApiEntity(BaseModel):
@@ -49,32 +51,27 @@ class ApmEntity(BaseModel):
     entity_type: str
 
 
-def _get_new_relic_api_key() -> str:
-    api_key = os.getenv(NEW_RELIC_API_KEY_ENV_VAR)
-    if not api_key:
-        raise ValueError(
-            f"Environment variable {NEW_RELIC_API_KEY_ENV_VAR} is not set."
-        )
-    return api_key
-
-
-def get_prod_apm_entities_by_component_tag(component_tag: str) -> Optional[ApmEntity]:
+def get_prod_apm_entities_by_component_tag(
+    component_tag: str, account: str
+) -> Optional[ApmEntity]:
     """Fetches New Relic APM application entity details by component tag UUID.
 
     Queries the NerdGraph API for APM application entities matching the given
-    component_tag (uuid). If multiple entities are found, it attempts to return
-    one with 'live', 'prod', or 'production' in its name. Otherwise, it returns
-    the first entity found.
+    component_tag (uuid) for a specific New Relic account. If multiple entities
+    are found, it attempts to return one with 'live', 'prod', or 'production'
+    in its name. Otherwise, it returns the first entity found.
 
-    Requires the NEW_RELIC_API_KEY environment variable to be set.
+    Requires the relevant NEW_RELIC_API_KEY_<ACCOUNT_ABBREVIATION> environment
+    variable to be set.
 
     Args:
         component_tag: The component tag UUID to search for.
+        account: The New Relic account abbreviation.
 
     Returns:
         An ApmEntity object if a matching entity is found, otherwise None.
     """
-    api_key = _get_new_relic_api_key()
+    api_key = get_new_relic_api_key(account)
     headers = {
         "API-Key": api_key,
         "Content-Type": "application/json",
@@ -113,12 +110,12 @@ def get_prod_apm_entities_by_component_tag(component_tag: str) -> Optional[ApmEn
         or not parsed_response.data.actor
         or not parsed_response.data.actor.entity_search
         or not parsed_response.data.actor.entity_search.results
-        or not parsed_response.data.actor.entity_search.results.entities # Ensure entities list itself is not None
+        or not parsed_response.data.actor.entity_search.results.entities  # Ensure entities list itself is not None
     ):
         return None
 
     api_entities = parsed_response.data.actor.entity_search.results.entities
-    if not api_entities: # Explicit check for empty list
+    if not api_entities:  # Explicit check for empty list
         return None
 
     output_entities = [
@@ -151,18 +148,34 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Get APM entities by component tag from New Relic."
     )
-    parser.add_argument("--component-tag", help="The component tag to search for.")
+    parser.add_argument(
+        "--component-tag", required=True, help="The component tag to search for."
+    )
+    parser.add_argument(
+        "--account",
+        required=True,
+        help="New Relic account abbreviation (e.g., 'ACC1').",
+    )
     return parser.parse_args()
 
 
 def main_cli():
     args = parse_args()
+    if not args.component_tag:
+        print("Error: --component-tag is required.")
+        exit(1)
+    if not args.account:
+        print("Error: --account is required.")
+        exit(1)
+
     try:
-        entity = get_prod_apm_entities_by_component_tag(args.component_tag)
+        entity = get_prod_apm_entities_by_component_tag(
+            component_tag=args.component_tag, account=args.account
+        )
         if entity:
             print(json.dumps(entity.model_dump(), indent=2))
         else:
-            print(json.dumps(None)) # Or print a message like "No entity found."
+            print(json.dumps(None))  # Or print a message like "No entity found."
     except ValueError as e:
         # Specific errors from the function (API key, NerdGraph errors)
         print(f"Error: {e}")

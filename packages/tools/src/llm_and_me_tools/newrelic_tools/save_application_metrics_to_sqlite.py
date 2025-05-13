@@ -29,6 +29,7 @@ def create_metrics_table(conn: sqlite3.Connection):
 
 def save_application_metrics_to_sqlite(
     component_tags: List[str],
+    account: str,
     db_file: str,
     start_datetime_iso: Optional[str] = None,
     end_datetime_iso: Optional[str] = None,
@@ -38,6 +39,7 @@ def save_application_metrics_to_sqlite(
 
     Args:
         component_tags: A list of Cortex component tags to identify New Relic entities.
+        account: The New Relic account abbreviation.
         db_file: Path to the SQLite database file.
         start_datetime_iso: Optional ISO 8601 start datetime for the metrics window.
         end_datetime_iso: Optional ISO 8601 end datetime for the metrics window.
@@ -55,9 +57,11 @@ def save_application_metrics_to_sqlite(
         for component_tag in component_tags:
             result_detail = {"component_tag": component_tag, "result": ""}
             try:
-                apm_entity: Optional[
-                    ApmEntity
-                ] = get_prod_apm_entities_by_component_tag(component_tag)
+                apm_entity: Optional[ApmEntity] = (
+                    get_prod_apm_entities_by_component_tag(
+                        component_tag=component_tag, account=account
+                    )
+                )
                 if not apm_entity:
                     result_detail[
                         "result"
@@ -75,6 +79,7 @@ def save_application_metrics_to_sqlite(
 
                 metrics: Optional[ApplicationMetrics] = get_application_metrics(
                     app_id=app_id,
+                    account=account,
                     start_datetime_iso=start_datetime_iso,
                     end_datetime_iso=end_datetime_iso,
                 )
@@ -149,6 +154,11 @@ def parse_args() -> argparse.Namespace:
         type=lambda t: [s.strip() for s in t.split(',')]
     )
     parser.add_argument(
+        "--account",
+        required=True,
+        help="New Relic account abbreviation (e.g., 'ACC1').",
+    )
+    parser.add_argument(
         "--db-file", required=True, help="Path to the SQLite database file."
     )
     parser.add_argument(
@@ -169,8 +179,13 @@ def main_cli():
     args = parse_args()
     print(args)
     # args.component_tags is now a list
+    if not args.account: # Should be caught by argparse if required=True
+        print("Error: --account is required.")
+        exit(1)
+
     result_json = save_application_metrics_to_sqlite(
-        component_tags=args.component_tags, # Changed from args.component_tag
+        component_tags=args.component_tags,
+        account=args.account,
         db_file=args.db_file,
         start_datetime_iso=args.start_time,
         end_datetime_iso=args.end_time,

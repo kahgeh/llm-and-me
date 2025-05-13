@@ -4,14 +4,15 @@ import os
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import requests
-from dotenv import load_dotenv
+from dotenv import load_dotenv # Keep for direct script execution, though api_key_selector also calls it
 from pydantic import BaseModel, Field
+
+from llm_and_me_tools.newrelic_tools.api_key_selector import get_new_relic_api_key
 
 # NEW_RELIC_API_BASE_URL = "https://api.newrelic.com/v2" # V2 API Base URL, no longer primary
 NERDGRAPH_API_URL = "https://api.newrelic.com/graphql"  # NerdGraph API URL
-NEW_RELIC_API_KEY_ENV_VAR = "NEW_RELIC_API_KEY"
 
-load_dotenv()
+load_dotenv() # Ensures .env is loaded if this script is run directly
 
 
 # --- Pydantic Models for NerdGraph API Response ---
@@ -77,15 +78,6 @@ class ApplicationMetrics(BaseModel):
     error_rate_percentage: Optional[float] = (
         None  # Will be derived if error_rate and request_count are present
     )
-
-
-def _get_new_relic_api_key() -> str:
-    api_key = os.getenv(NEW_RELIC_API_KEY_ENV_VAR)
-    if not api_key:
-        raise ValueError(
-            f"New Relic API key not found. Set the {NEW_RELIC_API_KEY_ENV_VAR} environment variable."
-        )
-    return api_key
 
 
 # Helper function to execute a single NRQL query
@@ -170,12 +162,14 @@ def _execute_nrql_query(
 
 def get_application_metrics(
     app_id: str,  # This is the entityGuid
+    account: str,
     start_datetime_iso: Optional[str] = None,  # Expect ISO 8601 format string
     end_datetime_iso: Optional[str] = None,  # Expect ISO 8601 format string
 ) -> ApplicationMetrics:
     """Fetches key performance metrics for a New Relic application.
 
-    Requires the NEW_RELIC_API_KEY environment variable to be set.
+    Requires the relevant NEW_RELIC_API_KEY_<ACCOUNT_ABBREVIATION> environment
+    variable to be set.
     Metrics are fetched for 'Web' transaction types.
     Time format for start_datetime_iso and end_datetime_iso should be ISO 8601
     (e.g., "2023-01-01T00:00:00+00:00" or "2023-01-01T00:00:00Z").
@@ -184,13 +178,14 @@ def get_application_metrics(
 
     Args:
         app_id: The New Relic Application Entity GUID.
+        account: The New Relic account abbreviation.
         start_datetime_iso: Optional start time for the metrics window (ISO 8601).
         end_datetime_iso: Optional end time for the metrics window (ISO 8601).
 
     Returns:
         An ApplicationMetrics object containing throughput and error rate.
     """
-    api_key = _get_new_relic_api_key()
+    api_key = get_new_relic_api_key(account)
     headers = {"Api-Key": api_key, "Content-Type": "application/json"}
 
     transaction_type = "Web"
@@ -299,6 +294,11 @@ def _parse_args() -> argparse.Namespace:
         type=str,
         help="End time for metrics query in ISO 8601 format (e.g., YYYY-MM-DDTHH:MM:SSZ). Defaults to now.",
     )
+    parser.add_argument(
+        "--account",
+        required=True, # Account is always needed for API key
+        help="New Relic account abbreviation (e.g., 'ACC1').",
+    )
     return parser.parse_args()
 
 
@@ -315,16 +315,16 @@ if __name__ == "__main__":
             "Set it with --app-id or the NEW_RELIC_TEST_APP_ID environment variable."
         )
         exit(1)
-    if not os.getenv(NEW_RELIC_API_KEY_ENV_VAR):
-        print(
-            f"Error: New Relic API key not found. Set the {NEW_RELIC_API_KEY_ENV_VAR} environment variable."
-        )
+    
+    if not args.account:
+        print("Error: --account is required to select the New Relic API key.")
         exit(1)
 
     try:
-        print(f"--- Fetching WEB metrics for Entity GUID: {app_id_to_use} ---")
+        print(f"--- Fetching WEB metrics for Entity GUID: {app_id_to_use} on account {args.account} ---")
         web_metrics = get_application_metrics(
             app_id=app_id_to_use,
+            account=args.account,
             start_datetime_iso=args.start_time,
             end_datetime_iso=args.end_time,
         )
