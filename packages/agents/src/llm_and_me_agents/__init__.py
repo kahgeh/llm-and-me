@@ -1,10 +1,7 @@
 import argparse
 import asyncio
-import json  # Added for potential future use if needed
 import os
-import subprocess
 import sys
-import tempfile
 
 from dotenv import load_dotenv
 from logfire import configure
@@ -56,6 +53,11 @@ openapi_server = MCPServerStdio(
 newrelic_server = MCPServerStdio(
     "uv",
     args=["run", "newrelic-mcp-server"],
+)
+
+processing_history_server = MCPServerStdio(
+    "uv",
+    args=["run", "processing-history-mcp-server"],
 )
 
 # Assuming mcp-server-git is already a command provided by the mcp-server-fetch package
@@ -117,6 +119,7 @@ agent = Agent(
         openapi_server,
         filesystem_server,
         sqlite_server,
+        processing_history_server,
     ],
     system_prompt="You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more",
 )

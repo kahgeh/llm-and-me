@@ -29,6 +29,7 @@ llm-and-me-agents = { workspace = true }
 
 [project.scripts]
 llm-and-me = "llm_and_me:run_agent"
+processing-history-mcp-server = "llm_and_me_tools.processing_history_mcp_server:main"
 
 [tool.uv.workspace]
 members = [

@@ -21,6 +21,7 @@ markdown-mcp-server = "llm_and_me_tools:markdown_main"
 cortex-mcp-server = "llm_and_me_tools:cortex_main" # Added Cortex server
 openapi-mcp-server = "llm_and_me_tools.openapi_mcp_server:main" # Added OpenAPI server
 json-to-sqlite = "llm_and_me_tools.json_to_sqlite:main"
+processing-history-mcp-server= "llm_and_me_tools.processing_history_mcp_server:main" # Added New Relic server
 newrelic-mcp-server = "llm_and_me_tools.newrelic_mcp_server:main" # Added New Relic server
 
 [tool.setuptools.packages.find]
