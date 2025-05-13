@@ -1,6 +1,7 @@
 import argparse
+import json
 import sqlite3
-from typing import Optional
+from typing import List, Optional
 
 from llm_and_me_tools.newrelic_tools.get_apm_entity_by_tag import (
     ApmEntity, get_prod_apm_entities_by_component_tag)
@@ -27,78 +28,113 @@ def create_metrics_table(conn: sqlite3.Connection):
 
 
 def save_application_metrics_to_sqlite(
-    component_tag: str,
+    component_tags: List[str],
     db_file: str,
     start_datetime_iso: Optional[str] = None,
     end_datetime_iso: Optional[str] = None,
 ) -> str:
     """
-    Fetches application metrics for a given component tag and saves them to an SQLite database.
+    Fetches application metrics for given component tags and saves them to an SQLite database.
 
     Args:
-        component_tag: The Cortex component tag to identify the New Relic entity.
+        component_tags: A list of Cortex component tags to identify New Relic entities.
         db_file: Path to the SQLite database file.
         start_datetime_iso: Optional ISO 8601 start datetime for the metrics window.
         end_datetime_iso: Optional ISO 8601 end datetime for the metrics window.
 
     Returns:
-        A string message indicating the outcome.
+        A JSON string summarizing the outcome for each component tag.
     """
-    apm_entity: Optional[ApmEntity] = get_prod_apm_entities_by_component_tag(
-        component_tag
-    )
-    if not apm_entity:
-        return f"Error: Could not find APM entity for component tag '{component_tag}'."
-    if not apm_entity.guid:
-        return (
-            f"Error: APM entity found for '{component_tag}' but it has no entity.guid."
-        )
-
-    app_id = apm_entity.guid
-
-    metrics: Optional[ApplicationMetrics] = get_application_metrics(
-        app_id=app_id,
-        start_datetime_iso=start_datetime_iso,
-        end_datetime_iso=end_datetime_iso,
-    )
-
-    if not metrics:
-        return f"Error: Could not retrieve application metrics for entity GUID '{app_id}' (component: '{component_tag}')."
-
+    results = []
+    conn = None
     try:
         conn = sqlite3.connect(db_file)
         create_metrics_table(conn)
         cursor = conn.cursor()
 
-        time_window_from_iso = metrics.time_window['from']
-        time_window_to_iso = metrics.time_window['to']
+        for component_tag in component_tags:
+            result_detail = {"component_tag": component_tag, "result": ""}
+            try:
+                apm_entity: Optional[
+                    ApmEntity
+                ] = get_prod_apm_entities_by_component_tag(component_tag)
+                if not apm_entity:
+                    result_detail[
+                        "result"
+                    ] = f"Error: Could not find APM entity for component tag '{component_tag}'."
+                    results.append(result_detail)
+                    continue
+                if not apm_entity.guid:
+                    result_detail[
+                        "result"
+                    ] = f"Error: APM entity found for '{component_tag}' but it has no entity.guid."
+                    results.append(result_detail)
+                    continue
 
-        cursor.execute(
-            """
-            INSERT OR REPLACE INTO metrics (
-                component_id, throughput_rpm, error_rate_percentage,
-                time_window_from, time_window_to
-            ) VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                component_tag,
-                metrics.throughput_rpm,
-                metrics.error_rate_percentage,
-                time_window_from_iso,
-                time_window_to_iso,
-            ),
-        )
-        conn.commit()
-        return (
-            f"Successfully saved metrics for component '{component_tag}' "
-            f"(entity GUID: {apm_entity.guid}) to '{db_file}'. "
-            f"Time window: {time_window_from_iso} to {time_window_to_iso}."
-        )
+                app_id = apm_entity.guid
+
+                metrics: Optional[ApplicationMetrics] = get_application_metrics(
+                    app_id=app_id,
+                    start_datetime_iso=start_datetime_iso,
+                    end_datetime_iso=end_datetime_iso,
+                )
+
+                if not metrics:
+                    result_detail[
+                        "result"
+                    ] = f"Error: Could not retrieve application metrics for entity GUID '{app_id}' (component: '{component_tag}')."
+                    results.append(result_detail)
+                    continue
+
+                time_window_from_iso = metrics.time_window["from"]
+                time_window_to_iso = metrics.time_window["to"]
+
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO metrics (
+                        component_id, throughput_rpm, error_rate_percentage,
+                        time_window_from, time_window_to
+                    ) VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        component_tag,
+                        metrics.throughput_rpm,
+                        metrics.error_rate_percentage,
+                        time_window_from_iso,
+                        time_window_to_iso,
+                    ),
+                )
+                conn.commit()
+                result_detail[
+                    "result"
+                ] = (
+                    f"Success: Saved metrics (entity GUID: {apm_entity.guid}). "
+                    f"Time window: {time_window_from_iso} to {time_window_to_iso}."
+                )
+                results.append(result_detail)
+
+            except Exception as e:
+                # Catch any unexpected error during processing for a single tag
+                result_detail[
+                    "result"
+                ] = f"Error processing component tag '{component_tag}': {e}"
+                results.append(result_detail)
+                # Optionally rollback if needed, though INSERT OR REPLACE is somewhat atomic per row
+                # conn.rollback()
+
     except sqlite3.Error as e:
-        return f"Error saving metrics to SQLite for component '{component_tag}': {e}"
+        # Handle errors related to the database connection itself
+        results.append(
+            {
+                "component_tag": "Database Operation",
+                "result": f"Error interacting with SQLite database '{db_file}': {e}",
+            }
+        )
     finally:
         if conn:
             conn.close()
+
+    return json.dumps(results, indent=2)
 
 
 def parse_args() -> argparse.Namespace:
@@ -107,9 +143,10 @@ def parse_args() -> argparse.Namespace:
         description="Fetch New Relic application metrics and save to SQLite."
     )
     parser.add_argument(
-        "--component-tag",
+        "--component-tags",
         required=True,
-        help="Cortex component tag to identify the New Relic entity.",
+        help="One or more Cortex component tags(comma separated) to identify New Relic entities.",
+        type=lambda t: [s.strip() for s in t.split(',')]
     )
     parser.add_argument(
         "--db-file", required=True, help="Path to the SQLite database file."
@@ -130,13 +167,15 @@ def parse_args() -> argparse.Namespace:
 def main_cli():
     """Command-line interface for the tool."""
     args = parse_args()
-    result = save_application_metrics_to_sqlite(
-        component_tag=args.component_tag,
+    print(args)
+    # args.component_tags is now a list
+    result_json = save_application_metrics_to_sqlite(
+        component_tags=args.component_tags, # Changed from args.component_tag
         db_file=args.db_file,
         start_datetime_iso=args.start_time,
         end_datetime_iso=args.end_time,
     )
-    print(result)
+    print(result_json)
 
 
 if __name__ == "__main__":
