@@ -4,9 +4,13 @@ import sqlite3
 from typing import List, Optional
 
 from llm_and_me_tools.newrelic_tools.get_apm_entity_by_tag import (
-    ApmEntity, get_prod_apm_entities_by_component_tag)
+    ApmEntity,
+    get_prod_apm_entities_by_component_tag,
+)
 from llm_and_me_tools.newrelic_tools.get_application_metrics import (
-    ApplicationMetrics, get_application_metrics)
+    ApplicationMetrics,
+    get_application_metrics,
+)
 
 
 def create_metrics_table(conn: sqlite3.Connection):
@@ -18,6 +22,7 @@ def create_metrics_table(conn: sqlite3.Connection):
             component_id TEXT NOT NULL,
             throughput_rpm REAL,
             error_rate_percentage REAL,
+            traffic_volume INTEGER,
             time_window_from TEXT NOT NULL,
             time_window_to TEXT NOT NULL,
             PRIMARY KEY (component_id, time_window_from, time_window_to)
@@ -63,15 +68,15 @@ def save_application_metrics_to_sqlite(
                     )
                 )
                 if not apm_entity:
-                    result_detail[
-                        "result"
-                    ] = f"Error: Could not find APM entity for component tag '{component_tag}'."
+                    result_detail["result"] = (
+                        f"Error: Could not find APM entity for component tag '{component_tag}'."
+                    )
                     results.append(result_detail)
                     continue
                 if not apm_entity.guid:
-                    result_detail[
-                        "result"
-                    ] = f"Error: APM entity found for '{component_tag}' but it has no entity.guid."
+                    result_detail["result"] = (
+                        f"Error: APM entity found for '{component_tag}' but it has no entity.guid."
+                    )
                     results.append(result_detail)
                     continue
 
@@ -85,9 +90,9 @@ def save_application_metrics_to_sqlite(
                 )
 
                 if not metrics:
-                    result_detail[
-                        "result"
-                    ] = f"Error: Could not retrieve application metrics for entity GUID '{app_id}' (component: '{component_tag}')."
+                    result_detail["result"] = (
+                        f"Error: Could not retrieve application metrics for entity GUID '{app_id}' (component: '{component_tag}')."
+                    )
                     results.append(result_detail)
                     continue
 
@@ -97,22 +102,21 @@ def save_application_metrics_to_sqlite(
                 cursor.execute(
                     """
                     INSERT OR REPLACE INTO metrics (
-                        component_id, throughput_rpm, error_rate_percentage,
+                        component_id, throughput_rpm, error_rate_percentage, traffic_volume,
                         time_window_from, time_window_to
-                    ) VALUES (?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?)
                     """,
                     (
                         component_tag,
                         metrics.throughput_rpm,
                         metrics.error_rate_percentage,
+                        metrics.traffic_volume,
                         time_window_from_iso,
                         time_window_to_iso,
                     ),
                 )
                 conn.commit()
-                result_detail[
-                    "result"
-                ] = (
+                result_detail["result"] = (
                     f"Success: Saved metrics (entity GUID: {apm_entity.guid}). "
                     f"Time window: {time_window_from_iso} to {time_window_to_iso}."
                 )
@@ -120,9 +124,9 @@ def save_application_metrics_to_sqlite(
 
             except Exception as e:
                 # Catch any unexpected error during processing for a single tag
-                result_detail[
-                    "result"
-                ] = f"Error processing component tag '{component_tag}': {e}"
+                result_detail["result"] = (
+                    f"Error processing component tag '{component_tag}': {e}"
+                )
                 results.append(result_detail)
                 # Optionally rollback if needed, though INSERT OR REPLACE is somewhat atomic per row
                 # conn.rollback()
@@ -151,7 +155,7 @@ def parse_args() -> argparse.Namespace:
         "--component-tags",
         required=True,
         help="One or more Cortex component tags(comma separated) to identify New Relic entities.",
-        type=lambda t: [s.strip() for s in t.split(',')]
+        type=lambda t: [s.strip() for s in t.split(",")],
     )
     parser.add_argument(
         "--account",
@@ -179,7 +183,7 @@ def main_cli():
     args = parse_args()
     print(args)
     # args.component_tags is now a list
-    if not args.account: # Should be caught by argparse if required=True
+    if not args.account:  # Should be caught by argparse if required=True
         print("Error: --account is required.")
         exit(1)
 

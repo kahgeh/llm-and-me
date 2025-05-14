@@ -43,6 +43,7 @@ class NrqlResult(BaseModel):
     error_rate_percentage: Optional[float] = Field(
         None, alias="error_rate_percent"
     )  # Expecting 0-100
+    traffic_volume: Optional[int] = Field(None, alias="traffic_volume_count")
 
     class Config:
         extra = "allow"  # Allow other fields that might come from NRQL
@@ -78,6 +79,7 @@ class ApplicationMetrics(BaseModel):
     error_rate_percentage: Optional[float] = (
         None  # Will be derived if error_rate and request_count are present
     )
+    traffic_volume: Optional[int] = None
 
 
 # Helper function to execute a single NRQL query
@@ -270,6 +272,11 @@ def get_application_metrics(
         output_metrics_dict["error_rate_percentage"] = (
             parsed_er.error_rate_percentage
         )  # This is 0-100
+
+    query_tv_str = f"SELECT count(apm.service.transaction.duration) as traffic_volume_count FROM Metric WHERE transactionType='{transaction_type}' AND entityGuid = '{app_id}' {time_window_nrql}"
+    parsed_tv, _ = _execute_nrql_query(account_id, query_tv_str, headers)
+    if parsed_tv and parsed_tv.traffic_volume is not None:
+        output_metrics_dict["traffic_volume"] = parsed_tv.traffic_volume
 
     return ApplicationMetrics(**output_metrics_dict)
 
