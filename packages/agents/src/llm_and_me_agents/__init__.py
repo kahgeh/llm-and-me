@@ -81,9 +81,11 @@ fetch_server = MCPServerStdio(
     "uvx",
     args=["mcp-server-fetch" ],
 )
+
+brave_api_key = os.getenv("BRAVE_API_KEY", "")
 search_server = MCPServerStdio(
-    "npx",
-    args=["-y", "@modelcontextprotocol/server-brave-search" ],
+    "sh",
+    args=["-c", f"BRAVE_API_KEY='{brave_api_key}' npx -y @modelcontextprotocol/server-brave-search"],
 )
 
 rag_crawler_server = MCPServerHTTP(url='http://localhost:8051/sse')
