@@ -6,14 +6,11 @@ import sys
 from dotenv import load_dotenv
 from logfire import configure
 from prompt_toolkit import PromptSession
-from prompt_toolkit.cursor_shapes import (
-    CursorShape,
-    ModalCursorShapeConfig,
-    SimpleCursorShapeConfig,
-)
+from prompt_toolkit.cursor_shapes import (CursorShape, ModalCursorShapeConfig,
+                                          SimpleCursorShapeConfig)
 from prompt_toolkit.history import InMemoryHistory
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServerStdio
+from pydantic_ai.mcp import MCPServerHTTP, MCPServerStdio
 
 load_dotenv()
 
@@ -65,10 +62,9 @@ datetime_server = MCPServerStdio(
     args=["run", "datetime-mcp-server"],
 )
 
-# Assuming mcp-server-git is already a command provided by the mcp-server-fetch package
 main_git_server = MCPServerStdio(
-    "mcp-server-git",
-    args=[],
+   "uvx",
+    args=["mcp-server-git" ],
 )
 
 filesystem_server = MCPServerStdio(
@@ -77,19 +73,20 @@ filesystem_server = MCPServerStdio(
 )
 
 sqlite_server = MCPServerStdio(
-    "docker",
-    args=[
-        "run",
-        "--rm",
-        "-i",
-        "-v",
-        f"{os.getcwd()}/data:/mcp",
-        "mcp/sqlite",
-        "--db-path",
-        "/mcp/all.db",
-    ],
+    "uvx",
+    args=["mcp-server-sqlite" ],
 )
 
+fetch_server = MCPServerStdio(
+    "uvx",
+    args=["mcp-server-fetch" ],
+)
+search_server = MCPServerStdio(
+    "npx",
+    args=["-y", "@modelcontextprotocol/server-brave-search" ],
+)
+
+rag_crawler_server = MCPServerHTTP(url='http://localhost:8051/sse')
 
 # Prompt the user to choose the foundation model before creating the agent.
 def select_model() -> str:
@@ -123,9 +120,12 @@ agent = Agent(
         newrelic_server,
         openapi_server,
         filesystem_server,
+        fetch_server,
+        #search_server,
         sqlite_server,
         processing_history_server,
         datetime_server,
+        rag_crawler_server
     ],
     system_prompt="You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more",
 )
@@ -202,7 +202,6 @@ async def main(cli_args: argparse.Namespace):
             result = await agent.run(user_input, message_history=message_history)
             print(f"\n{result.output}")
             message_history.extend(result.new_messages())
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the LLM and Me agent.")
