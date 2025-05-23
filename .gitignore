@@ -1,5 +1,5 @@
 **/.env
-agents/node_modules
+**/node_modules
 agents/__pycache__
 agents/g-search-mcp
 .aider*
