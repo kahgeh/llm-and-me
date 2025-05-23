@@ -27,3 +27,5 @@ uv pip install mcp-server-git
 ## Download, build mcp docker containers
 
 - https://github.com/modelcontextprotocol/servers/tree/main/src/sqlite
+- https://github.com/modelcontextprotocol/servers/tree/main/src/brave-search
+- https://github.com/modelcontextprotocol/servers/tree/main/src/fetch
