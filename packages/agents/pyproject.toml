@@ -16,6 +16,8 @@ dependencies = [
     "pylint>=3.3.6",
     "prompt_toolkit>=3.0", # Add prompt_toolkit
     "tool>=0.8.0",
+    "mcp-server-fetch>=2025.1.17", 
+    "mcp-server-git>=2025.1.14",
 ]
 
 [tool.uv.sources]
