@@ -6,7 +6,7 @@
   - `description`: str (user-friendly description)
   - `llm_model_name`: str (e.g., "gpt-4", "claude-3-opus-20240229")
   - `base_url`: Optional[str] (for local LLM models)
-  - `data_classification`: Optional[str] (e.g., "public", "internal-only", "confidential")
+  - `data_classification`: str (e.g., "public", "internal-only", "confidential")
   - `mcp_servers`: List[str] (list of MCP server identifiers/names that this agent uses)
 - **Task:** Implement loading of agent specifications from a TOML configuration file (e.g., `agents.toml`). This file will contain an array of agent specifications, adhering to the defined Pydantic model.
   - Example (illustrating the data structure for the list of agents, which will be loaded from `agents.toml`):
@@ -17,6 +17,7 @@
             "description": "A general-purpose coding assistant.",
             "llm_model_name": "gpt-4o",
             "base_url": None,
+            "data_classification": "public", # Added data_classification
             "mcp_servers":[ "markdown_server",
                             "macos_system_server",
                             "custom_git_server",
