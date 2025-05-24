@@ -163,8 +163,6 @@ async def main(cli_args: argparse.Namespace):
                             continue
 
                         print(f"Switching to agent: {found_spec.name}...")
-                        message_history = []  # Clear history for the new agent
-                        print("Message history cleared for new agent session.")
                         next_agent_spec_to_run = found_spec
                         break  # Exit inner_loop to switch agent in outer_loop
                     else:
