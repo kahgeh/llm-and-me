@@ -2,16 +2,16 @@ import argparse
 import asyncio
 import os
 import sys
-import toml # Added
-from typing import List, Optional # Added
+from typing import List, Optional  # Added
 
+import toml  # Added
 from dotenv import load_dotenv
 from logfire import configure
 from prompt_toolkit import PromptSession
 from prompt_toolkit.cursor_shapes import (CursorShape, ModalCursorShapeConfig,
                                           SimpleCursorShapeConfig)
 from prompt_toolkit.history import InMemoryHistory
-from pydantic import BaseModel # Added
+from pydantic import BaseModel  # Added
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServerHTTP, MCPServerStdio
 
@@ -52,8 +52,8 @@ private_mode = False
 # --- End Privacy Mode State ---
 
 # --- MCP Server Definitions and Mapping ---
-def initialize_mcp_servers() -> dict:
-    """Initializes and returns a dictionary of all MCP servers."""
+def initialise_mcp_servers() -> dict:
+    """initialises and returns a dictionary of all MCP servers."""
     if os.getenv("LOGFIRE_TOKEN") is not None:
         configure(token=os.getenv("LOGFIRE_TOKEN"))
 
@@ -144,7 +144,7 @@ def initialize_mcp_servers() -> dict:
         "rag_crawler_server": rag_crawler_server,
     }
 
-ALL_MCP_SERVERS = initialize_mcp_servers()
+ALL_MCP_SERVERS = initialise_mcp_servers()
 # --- End MCP Server Definitions ---
 
 # --- Agent Initialization ---
@@ -155,7 +155,7 @@ if not agent_specifications:
 
 # Use the first agent specification as the default/initial agent
 current_agent_spec = agent_specifications[0]
-print(f"Initializing with agent: {current_agent_spec.name} ({current_agent_spec.description})")
+print(f"Initialising with agent: {current_agent_spec.name} ({current_agent_spec.description})")
 
 active_mcp_servers = []
 for server_name in current_agent_spec.mcp_servers:
@@ -192,7 +192,7 @@ async def main(cli_args: argparse.Namespace):
         vi_mode = True
         cursor_shape = ModalCursorShapeConfig()
 
-    message_history = []  # Initialize empty message history
+    message_history = []  # initialise empty message history
     history = InMemoryHistory()
     session = PromptSession(history=history, vi_mode=vi_mode, cursor=cursor_shape)
 
