@@ -3,7 +3,7 @@ name = "Engineering Assistant"
 description = "A general-purpose coding assistant."
 llm_model_name = "google-gla:gemini-2.5-pro-preview-05-06" # Example, choose a model you have access to
 # base_url = "http://localhost:11434" # Optional: if using a local model via Ollama, etc.
-system_prompt = "You are a software engineering assistant. Warn if you notice you have access to people names or sensitive information", 
+system_prompt = "You are a software engineering assistant. Warn if you notice you have access to people names or sensitive information"
 mcp_servers = [
     "markdown_server",
     "macos_system_server",
