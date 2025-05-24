@@ -10,6 +10,7 @@ from prompt_toolkit.cursor_shapes import (CursorShape, ModalCursorShapeConfig,
                                           SimpleCursorShapeConfig)
 from prompt_toolkit.history import InMemoryHistory
 from pydantic_ai import Agent
+from pydantic_ai.llm_providers import OpenAIProvider
 
 from .initialisations import (AgentSpecification, initialise_mcp_servers,
                               load_agent_specifications)
@@ -71,15 +72,28 @@ async def main(cli_args: argparse.Namespace):
             else:
                 print(f"Warning: MCP Server '{server_name}' defined in agent spec '{current_agent_spec.name}' but not found in ALL_MCP_SERVERS.")
 
-        agent = Agent(
-            model=current_agent_spec.llm_model_name,
-            base_url=current_agent_spec.base_url,
-            instrument=True,
-            mcp_servers=active_mcp_servers,
-            system_prompt=current_agent_spec.system_prompt,
-        )
+        if current_agent_spec.base_url:
+            # If base_url is provided, assume it's for an OpenAI-compatible provider
+            llm_provider = OpenAIProvider(
+                model=current_agent_spec.llm_model_name,
+                base_url=current_agent_spec.base_url,
+            )
+            agent = Agent(
+                llm_provider=llm_provider,
+                instrument=True,
+                mcp_servers=active_mcp_servers,
+                system_prompt=current_agent_spec.system_prompt,
+            )
+        else:
+            # Default behavior if no base_url is specified
+            agent = Agent(
+                model=current_agent_spec.llm_model_name,
+                instrument=True,
+                mcp_servers=active_mcp_servers,
+                system_prompt=current_agent_spec.system_prompt,
+            )
 
-        message_history = []
+        # message_history is now managed by the switching logic / initial setup
         history = InMemoryHistory()
         session = PromptSession(history=history, vi_mode=vi_mode, cursor=cursor_shape)
 
