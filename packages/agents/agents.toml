@@ -5,6 +5,7 @@ name = "Engineering Assistant"
 description = "A general-purpose coding assistant."
 llm_model_name = "openai:gpt-4o-mini" # Example, choose a model you have access to
 # base_url = "http://localhost:11434" # Optional: if using a local model via Ollama, etc.
+system_prompt = "You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more"
 mcp_servers = [
     "markdown_server",
     "macos_system_server",
