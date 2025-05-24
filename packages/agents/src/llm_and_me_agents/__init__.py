@@ -10,7 +10,8 @@ from prompt_toolkit.cursor_shapes import (CursorShape, ModalCursorShapeConfig,
                                           SimpleCursorShapeConfig)
 from prompt_toolkit.history import InMemoryHistory
 from pydantic_ai import Agent
-from pydantic_ai.llm_providers import OpenAIProvider
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
 from .initialisations import (AgentSpecification, initialise_mcp_servers,
                               load_agent_specifications)
@@ -74,12 +75,13 @@ async def main(cli_args: argparse.Namespace):
 
         if current_agent_spec.base_url:
             # If base_url is provided, assume it's for an OpenAI-compatible provider
-            llm_provider = OpenAIProvider(
-                model=current_agent_spec.llm_model_name,
+            openai_compatible_model= OpenAIModel( 
+                model_name=current_agent_spec.llm_model_name,
+                provider=OpenAIProvider(
                 base_url=current_agent_spec.base_url,
-            )
+            ))
             agent = Agent(
-                llm_provider=llm_provider,
+                openai_compatible_model,
                 instrument=True,
                 mcp_servers=active_mcp_servers,
                 system_prompt=current_agent_spec.system_prompt,
