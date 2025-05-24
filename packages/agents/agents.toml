@@ -1,11 +1,9 @@
-# Agent Specifications for llm-and-me-agents
-
 [[agents]]
 name = "Engineering Assistant"
 description = "A general-purpose coding assistant."
-llm_model_name = "openai:gpt-4o-mini" # Example, choose a model you have access to
+llm_model_name = "google-gla:gemini-2.5-pro-preview-05-06" # Example, choose a model you have access to
 # base_url = "http://localhost:11434" # Optional: if using a local model via Ollama, etc.
-system_prompt = "You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more"
+system_prompt = "You are a software engineering assistant. Warn if you notice you have access to people names or sensitive information", 
 mcp_servers = [
     "markdown_server",
     "macos_system_server",
@@ -23,14 +21,20 @@ mcp_servers = [
     "rag_crawler_server"
 ]
 
-# [[agents]]
-# name = "New Relic Expert"
-# description = "An assistant specialized in New Relic tasks."
-# llm_model_name = "openai:gpt-4o"
-# mcp_servers = [
-#     "newrelic_server",
-#     "datetime_server",
-#     "fetch_server",
-#     "sqlite_server",
-#     "processing_history_server"
-# ]
+name = "Private Data Analyst"
+description = "A data analysis assistant that can access private data sources and perform analysis."
+llm_model_name = "GLM-4-32B-0414-4bit-DWQ" # Example, choose a model you have access to
+base_url = "http://localhost:8080/api/v1" 
+system_prompt = "You are a data analysis assistant with access to private data sources and tools. You can perform analysis and answer questions based on the data."
+mcp_servers = [
+    "macos_system_server",
+    "main_git_server",
+    "filesystem_server",
+    "fetch_server",
+    "search_server",
+    "sqlite_server",
+    "processing_history_server",
+    "datetime_server",
+    "rag_crawler_server"
+]
+
