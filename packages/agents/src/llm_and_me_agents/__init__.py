@@ -17,11 +17,6 @@ from .initialisations import (AgentSpecification, initialise_mcp_servers,
 load_dotenv()
 
 
-# --- Privacy Mode State ---
-private_mode = False
-# --- End Privacy Mode State ---
-
-
 ALL_MCP_SERVERS = initialise_mcp_servers()
 # --- End MCP Server Definitions ---
 
@@ -46,7 +41,6 @@ async def main(cli_args: argparse.Namespace):
         cli_args: Optional pre-parsed command-line arguments.
                   If None, arguments will be parsed internally.
     """
-    global private_mode
     global current_agent_spec
     global active_mcp_servers
     global agent
@@ -120,24 +114,6 @@ async def main(cli_args: argparse.Namespace):
                     elif command == "edit":
                         session.default_buffer.reset()
                         session.default_buffer.open_in_editor()
-                        continue
-
-                    elif command == "toggle-privacy":
-                        private_mode = not private_mode
-                        if private_mode:
-                            os.environ["LLM_AND_ME_PRIVATE_MODE"] = "1"
-                            print("Private mode enabled. Tool outputs may be saved locally instead of displayed.")
-                            if "**Private mode disabled**" in message_history:
-                                message_history.remove("**Private mode disabled**")
-                            if "**Private mode enabled**" not in message_history:
-                                message_history.append("**Private mode enabled**")
-                        else:
-                            os.environ.pop("LLM_AND_ME_PRIVATE_MODE", None)
-                            print("Private mode disabled.")
-                            if "**Private mode enabled**" in message_history:
-                                message_history.remove("**Private mode enabled**")
-                            if "**Private mode disabled**" not in message_history:
-                                message_history.append("**Private mode disabled**")
                         continue
 
                     elif command == "list-agents":
