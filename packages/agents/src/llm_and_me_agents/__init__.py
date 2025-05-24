@@ -32,6 +32,7 @@ active_mcp_servers: List = []
 agent: Optional[Agent] = None
 # --- End Agent Initialization ---
 
+public_message_history_snapshot: List = [] # Snapshot for public agent history
 
 async def main(cli_args: argparse.Namespace):
     """
@@ -44,6 +45,7 @@ async def main(cli_args: argparse.Namespace):
     global current_agent_spec
     global active_mcp_servers
     global agent
+    global public_message_history_snapshot
 
     vi_mode = False
     cursor_shape = SimpleCursorShapeConfig(CursorShape.BLINKING_BEAM)
@@ -53,9 +55,12 @@ async def main(cli_args: argparse.Namespace):
         cursor_shape = ModalCursorShapeConfig()
 
     next_agent_spec_to_run: Optional[AgentSpecification] = agent_specifications[0]
+    message_history: List = [] # Initialize message history for the first agent session
 
     while next_agent_spec_to_run:
         current_agent_spec = next_agent_spec_to_run
+        # active_mcp_servers and agent will be initialized based on current_agent_spec
+        
         print(f"\nInitializing agent: {current_agent_spec.name} ({current_agent_spec.description})")
 
         active_mcp_servers = []
@@ -137,8 +142,29 @@ async def main(cli_args: argparse.Namespace):
                         if found_spec.name == current_agent_spec.name:
                             print(f"Agent '{found_spec.name}' is already active.")
                             continue
+                        
+                        print(f"Switching from agent '{current_agent_spec.name}' to '{found_spec.name}'...")
 
-                        print(f"Switching to agent: {found_spec.name}...")
+                        prev_is_public = current_agent_spec.data_classification == "public"
+                        next_is_public = found_spec.data_classification == "public"
+                        
+                        new_message_history_for_next_agent: List = []
+
+                        if prev_is_public and not next_is_public:
+                            # Switching from Public to Non-Public
+                            public_message_history_snapshot = list(message_history)
+                            # new_message_history_for_next_agent is already []
+                            print("Current public message history snapshotted. New agent session will start with a clear history.")
+                        elif not prev_is_public and next_is_public:
+                            # Switching from Non-Public to Public
+                            new_message_history_for_next_agent = list(public_message_history_snapshot)
+                            print("Non-public message history flushed. Reloading previous public message history for the new agent session.")
+                        else: # Public -> Public or Non-Public -> Non-Public
+                            # new_message_history_for_next_agent is already []
+                            print("Message history cleared for the new agent session.")
+                        
+                        message_history = new_message_history_for_next_agent # Update history for the next agent
+                        
                         next_agent_spec_to_run = found_spec
                         break  # Exit inner_loop to switch agent in outer_loop
                     else:
