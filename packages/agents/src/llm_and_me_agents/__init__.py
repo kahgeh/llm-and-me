@@ -117,6 +117,12 @@ async def main(cli_args: argparse.Namespace):
                         print("Private mode disabled.")
                     continue  # Skip sending the command to the agent
 
+                if command == "list-agents":
+                    print("Available agents:")
+                    for spec in agent_specifications:
+                        print(f"- {spec.name}: {spec.description}")
+                    continue
+
                 else:
                     print(f"Unknown command: {user_input}")
                     continue
