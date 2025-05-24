@@ -123,7 +123,7 @@ agent = Agent(
         openapi_server,
         filesystem_server,
         fetch_server,
-        #search_server,
+        search_server,
         sqlite_server,
         processing_history_server,
         datetime_server,
