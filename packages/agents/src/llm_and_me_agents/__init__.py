@@ -169,7 +169,7 @@ agent = Agent(
     base_url=current_agent_spec.base_url,
     instrument=True,
     mcp_servers=active_mcp_servers,
-    system_prompt="You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more",
+    system_prompt=current_agent_spec.system_prompt,
 )
 # --- End Agent Initialization ---
 
