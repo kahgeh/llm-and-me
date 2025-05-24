@@ -25,6 +25,7 @@ class AgentSpecification(BaseModel):
     llm_model_name: str
     base_url: Optional[str] = None
     mcp_servers: List[str]
+    system_prompt: Optional[str] = "You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more"
 
 
 def load_agent_specifications(file_path: str = "packages/agents/agents.toml") -> List[AgentSpecification]:
