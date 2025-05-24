@@ -21,6 +21,7 @@ mcp_servers = [
     "rag_crawler_server"
 ]
 
+[[agents]]
 name = "Private Data Analyst"
 description = "A data analysis assistant that can access private data sources and perform analysis."
 llm_model_name = "GLM-4-32B-0414-4bit-DWQ" # Example, choose a model you have access to
