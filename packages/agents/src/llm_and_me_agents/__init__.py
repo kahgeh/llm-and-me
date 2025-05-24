@@ -95,6 +95,16 @@ async def main(cli_args: argparse.Namespace):
 
         # message_history is now managed by the switching logic / initial setup
         history = InMemoryHistory()
+        # Populate history for prompt_toolkit if message_history has content (e.g., after restoring)
+        for msg_idx, msg_content in enumerate(message_history):
+            # Assuming user messages are at even indices and AI at odd, or just add all for context
+            # This might need refinement based on how message_history is structured by Pydantic-AI
+            if isinstance(msg_content, str): # Basic check
+                 history.append_string(msg_content)
+            elif hasattr(msg_content, 'content') and isinstance(msg_content.content, str): # Pydantic-AI Message
+                 history.append_string(msg_content.content)
+
+
         session = PromptSession(history=history, vi_mode=vi_mode, cursor=cursor_shape)
 
         async with agent.run_mcp_servers():
