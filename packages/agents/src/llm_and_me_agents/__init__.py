@@ -10,7 +10,7 @@ from prompt_toolkit.cursor_shapes import (CursorShape, ModalCursorShapeConfig,
                                           SimpleCursorShapeConfig)
 from prompt_toolkit.history import InMemoryHistory
 from pydantic_ai import Agent
-from pydantic_ai.llm_providers import OpenAIProvider
+from pydantic_ai.llm.openai import OpenAIProvider
 
 from .initialisations import (AgentSpecification, initialise_mcp_servers,
                               load_agent_specifications)
