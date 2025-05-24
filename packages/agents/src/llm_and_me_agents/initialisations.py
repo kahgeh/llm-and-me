@@ -14,6 +14,7 @@ class AgentSpecification(BaseModel):
     description: str
     llm_model_name: str
     base_url: Optional[str] = None
+    data_classification: Optional[str] = None # Added data_classification
     mcp_servers: List[str]
     system_prompt: Optional[str] = "You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more"
 
