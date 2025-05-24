@@ -174,20 +174,23 @@ async def main(cli_args: argparse.Namespace):
                         prev_is_public = current_agent_spec.data_classification == "public"
                         next_is_public = found_spec.data_classification == "public"
                         
-                        new_message_history_for_next_agent: List = []
+                        # By default, retain the current message history for the next agent.
+                        # This will be overridden only when switching from a Non-Public to a Public agent.
+                        new_message_history_for_next_agent: List = list(message_history)
 
                         if prev_is_public and not next_is_public:
-                            # Switching from Public to Non-Public
+                            # Switching from Public to Non-Public:
+                            # Snapshot the public history. The current message history is retained.
                             public_message_history_snapshot = list(message_history)
-                            # new_message_history_for_next_agent is already []
-                            print("Current public message history snapshotted. New agent session will start with a clear history.")
+                            print("Snapshotted public history. Current history retained for non-public session.")
                         elif not prev_is_public and next_is_public:
-                            # Switching from Non-Public to Public
+                            # Switching from Non-Public to Public:
+                            # Replace current non-public history with the previously snapshotted public history.
                             new_message_history_for_next_agent = list(public_message_history_snapshot)
-                            print("Non-public message history flushed. Reloading previous public message history for the new agent session.")
-                        else: # Public -> Public or Non-Public -> Non-Public
-                            # new_message_history_for_next_agent is already []
-                            print("Message history cleared for the new agent session.")
+                            print("Reloading public history snapshot for public session.")
+                        # else: # Public -> Public or Non-Public -> Non-Public
+                            # History is retained (due to default initialization of new_message_history_for_next_agent).
+                            # No specific message is printed for these transitions to reduce verbosity.
                         
                         message_history = new_message_history_for_next_agent # Update history for the next agent
                         
