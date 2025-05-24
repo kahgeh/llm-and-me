@@ -1,0 +1,35 @@
+# Agent Specifications for llm-and-me-agents
+
+[[agents]]
+name = "Engineering Assistant"
+description = "A general-purpose coding assistant."
+llm_model_name = "openai:gpt-4o-mini" # Example, choose a model you have access to
+# base_url = "http://localhost:11434" # Optional: if using a local model via Ollama, etc.
+mcp_servers = [
+    "markdown_server",
+    "macos_system_server",
+    "custom_git_server",
+    "main_git_server",
+    "cortex_server",
+    "newrelic_server",
+    "openapi_server",
+    "filesystem_server",
+    "fetch_server",
+    "search_server",
+    "sqlite_server",
+    "processing_history_server",
+    "datetime_server",
+    "rag_crawler_server"
+]
+
+# [[agents]]
+# name = "New Relic Expert"
+# description = "An assistant specialized in New Relic tasks."
+# llm_model_name = "openai:gpt-4o"
+# mcp_servers = [
+#     "newrelic_server",
+#     "datetime_server",
+#     "fetch_server",
+#     "sqlite_server",
+#     "processing_history_server"
+# ]

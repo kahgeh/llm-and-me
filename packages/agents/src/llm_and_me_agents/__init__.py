@@ -2,6 +2,8 @@ import argparse
 import asyncio
 import os
 import sys
+import toml # Added
+from typing import List, Optional # Added
 
 from dotenv import load_dotenv
 from logfire import configure
@@ -9,10 +11,40 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.cursor_shapes import (CursorShape, ModalCursorShapeConfig,
                                           SimpleCursorShapeConfig)
 from prompt_toolkit.history import InMemoryHistory
+from pydantic import BaseModel # Added
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServerHTTP, MCPServerStdio
 
 load_dotenv()
+
+
+# --- Agent Specification ---
+class AgentSpecification(BaseModel):
+    name: str
+    description: str
+    llm_model_name: str
+    base_url: Optional[str] = None
+    mcp_servers: List[str]
+
+
+def load_agent_specifications(file_path: str = "packages/agents/agents.toml") -> List[AgentSpecification]:
+    try:
+        with open(file_path, "r") as f:
+            data = toml.load(f)
+        # Validate and parse agent specifications
+        specs_data = data.get("agents", [])
+        if not specs_data:
+            print(f"Warning: No agents found in '{file_path}'.")
+            return []
+        return [AgentSpecification(**spec) for spec in specs_data]
+    except FileNotFoundError:
+        print(f"Error: Agent configuration file '{file_path}' not found.")
+        print("Please ensure 'agents.toml' exists and is correctly formatted.")
+        sys.exit(1)
+    except Exception as e: # Includes toml.TomlDecodeError and pydantic.ValidationError
+        print(f"Error loading or parsing agent specifications from '{file_path}': {e}")
+        sys.exit(1)
+# --- End Agent Specification ---
 
 # --- Privacy Mode State ---
 private_mode = False
@@ -90,47 +122,51 @@ search_server = MCPServerStdio(
 
 rag_crawler_server = MCPServerHTTP(url='http://localhost:8051/sse')
 
-# Prompt the user to choose the foundation model before creating the agent.
-def select_model() -> str:
-    models = [
-        "deepseek:deepseek-chat",
-        "openai:gpt-4o-mini",
-        "openai:gpt-4o",
-        "google-gla:gemini-2.0-flash",
-        "google-gla:gemini-2.5-pro-preview-05-06",
-    ]
-    print("Select a model:")
-    for i, model in enumerate(models, 1):
-        print(f"{i}. {model}")
-    while True:
-        choice = input("> ").strip()
-        if choice.isdigit() and 1 <= int(choice) <= len(models):
-            return models[int(choice) - 1]
-        print("Invalid selection, try again.")
+# --- MCP Server Definitions and Mapping ---
+ALL_MCP_SERVERS = {
+    "markdown_server": markdown_server,
+    "macos_system_server": macos_system_server,
+    "custom_git_server": custom_git_server,
+    "main_git_server": main_git_server,
+    "cortex_server": cortex_server,
+    "newrelic_server": newrelic_server,
+    "openapi_server": openapi_server,
+    "filesystem_server": filesystem_server,
+    "fetch_server": fetch_server,
+    "search_server": search_server,
+    "sqlite_server": sqlite_server,
+    "processing_history_server": processing_history_server,
+    "datetime_server": datetime_server,
+    "rag_crawler_server": rag_crawler_server,
+}
+# --- End MCP Server Definitions ---
 
+# --- Agent Initialization ---
+agent_specifications = load_agent_specifications()
+if not agent_specifications:
+    print("No agent specifications loaded. Exiting.")
+    sys.exit(1)
 
-selected_model = select_model()
+# Use the first agent specification as the default/initial agent
+current_agent_spec = agent_specifications[0]
+print(f"Initializing with agent: {current_agent_spec.name} ({current_agent_spec.description})")
+
+active_mcp_servers = []
+for server_name in current_agent_spec.mcp_servers:
+    server_instance = ALL_MCP_SERVERS.get(server_name)
+    if server_instance:
+        active_mcp_servers.append(server_instance)
+    else:
+        print(f"Warning: MCP Server '{server_name}' defined in agent spec but not found in ALL_MCP_SERVERS.")
+
 agent = Agent(
-    selected_model,
+    model=current_agent_spec.llm_model_name,
+    base_url=current_agent_spec.base_url,
     instrument=True,
-    mcp_servers=[
-        markdown_server,
-        macos_system_server,
-        custom_git_server,
-        main_git_server,
-        cortex_server,
-        newrelic_server,
-        openapi_server,
-        filesystem_server,
-        fetch_server,
-        search_server,
-        sqlite_server,
-        processing_history_server,
-        datetime_server,
-        rag_crawler_server
-    ],
+    mcp_servers=active_mcp_servers,
     system_prompt="You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more",
 )
+# --- End Agent Initialization ---
 
 
 async def main(cli_args: argparse.Namespace):
