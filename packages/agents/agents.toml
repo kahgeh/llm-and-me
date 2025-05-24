@@ -24,7 +24,7 @@ mcp_servers = [
 [[agents]]
 name = "Private Data Analyst"
 description = "A data analysis assistant that can access private data sources and perform analysis."
-llm_model_name = "GLM-4-32B-0414-4bit-DWQ", 
+llm_model_name = "GLM-4-32B-0414-4bit-DWQ" 
 base_url = "http://localhost:8080/api/v1" 
 system_prompt = "You are a data analysis assistant with access to private data sources and tools. You can perform analysis and answer questions based on the data."
 data_classification = "internal-only"
