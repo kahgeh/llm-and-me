@@ -15,6 +15,8 @@ def load_agent_specifications(file_path: str = "packages/agents/agents.toml") ->
             data = toml.load(f)
         # Validate and parse agent specifications
         specs_data = data.get("agents", [])
+        print(f"Loaded {len(specs_data)} agent specifications from '{file_path}'.")
+        print(f"Agent specifications: {specs_data}")
         if not specs_data:
             print(f"Warning: No agents found in '{file_path}'.")
             return []
