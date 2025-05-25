@@ -1,8 +1,8 @@
 import os
 import sys
 from typing import List
+import tomllib # Changed from toml
 
-import toml
 from logfire import configure
 from pydantic_ai.mcp import MCPServerHTTP, MCPServerStdio
 
@@ -11,8 +11,8 @@ from .models import AgentSpecification
 
 def load_agent_specifications(file_path: str = "packages/agents/agents.toml") -> List[AgentSpecification]:
     try:
-        with open(file_path, "r") as f:
-            data = toml.load(f)
+        with open(file_path, "rb") as f: # Changed to "rb" for tomllib
+            data = tomllib.load(f) # Changed from toml.load(f)
         # Validate and parse agent specifications
         specs_data = data.get("agents", [])
         print(f"Loaded {len(specs_data)} agent specifications from '{file_path}'.")
