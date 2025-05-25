@@ -13,8 +13,7 @@ from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from .initialisations import (initialise_mcp_servers,
-                              load_agent_specifications)
+from .initialisations import initialise_mcp_servers, load_agent_specifications
 from .models import AgentSpecification
 
 load_dotenv()
@@ -74,6 +73,7 @@ async def main(cli_args: argparse.Namespace):
             else:
                 print(f"Warning: MCP Server '{server_name}' defined in agent spec '{current_agent_spec.name}' but not found in ALL_MCP_SERVERS.")
 
+        print(f"current_agent_spec={current_agent_spec}")
         if current_agent_spec.base_url:
             # If base_url is provided, assume it's for an OpenAI-compatible provider
             openai_compatible_model= OpenAIModel( 
