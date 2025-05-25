@@ -2,7 +2,6 @@
 name = "Engineering Assistant"
 description = "A general-purpose coding assistant."
 llm_model_name = "google-gla:gemini-2.5-pro-preview-05-06" # Example, choose a model you have access to
-system_prompt = "You are a software engineering assistant. Warn if you notice you have access to people names or sensitive information"
 data_classification = "public"
 mcp_servers = [
     "markdown_server",
@@ -20,13 +19,13 @@ mcp_servers = [
     "datetime_server",
     "rag_crawler_server"
 ]
+system_prompt = "You are a software engineering assistant. Warn if you notice you have access to people names or sensitive information"
 
 [[agents]]
 name = "Private Data Analyst"
 description = "A data analysis assistant that can access private data sources and perform analysis."
-llm_model_name = "GLM-4-32B-0414-4bit-DWQ" 
-base_url = "http://localhost:8080/api/v1" 
-system_prompt = "You are a data analysis assistant with access to private data sources and tools. You can perform analysis and answer questions based on the data."
+llm_model_name = "mlx-community/gemma-3-27b-it-qat-4bit" 
+base_url = "http://localhost:8080/v1" 
 data_classification = "internal-only"
 mcp_servers = [
     "macos_system_server",
@@ -39,4 +38,11 @@ mcp_servers = [
     "datetime_server",
     "rag_crawler_server"
 ]
+system_prompt = """
+You are a data analysis assistant with access to private data sources and tools. 
+You can perform analysis and answer questions based on the data. 
+You have access to functions. If you decide to invoke any of the function(s), you MUST put it in the format of {"name": function name, "parameters": dictionary of argument name and its value} 
+You SHOULD NOT include any other text in the response if you call a function
+""" 
+
 
