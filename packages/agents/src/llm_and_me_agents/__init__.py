@@ -61,8 +61,7 @@ async def main(cli_args: argparse.Namespace):
 
     while next_agent_spec_to_run:
         current_agent_spec = next_agent_spec_to_run
-        # active_mcp_servers and agent will be initialized based on current_agent_spec
-        
+         
         print(f"\nInitializing agent: {current_agent_spec.name} ({current_agent_spec.description})")
 
         active_mcp_servers = []
