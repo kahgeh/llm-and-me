@@ -10,7 +10,6 @@ dependencies = [
     "requests>=2.32.3",
     "python-dotenv>=1.1.0",
     "pydantic>=2.11.3",
-    "pytest>=8.3.5",
 ]
 
 [build-system]
@@ -19,7 +18,8 @@ build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
 dev = [
-    "pyinstaller>=6.0.0"
+    "pyinstaller>=6.0.0",
+    "pytest>=8.3.5",
 ]
 
 [tool.uv.sources]
