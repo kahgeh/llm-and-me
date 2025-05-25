@@ -13,8 +13,9 @@ from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from .initialisations import (AgentSpecification, initialise_mcp_servers,
+from .initialisations import (initialise_mcp_servers,
                               load_agent_specifications)
+from .models import AgentSpecification
 
 load_dotenv()
 

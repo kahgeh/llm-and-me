@@ -1,22 +1,12 @@
 import os
 import sys
-from typing import List, Optional
+from typing import List
 
 import toml
 from logfire import configure
-from pydantic import BaseModel
 from pydantic_ai.mcp import MCPServerHTTP, MCPServerStdio
 
-
-# --- Agent Specification ---
-class AgentSpecification(BaseModel):
-    name: str
-    description: str
-    llm_model_name: str
-    base_url: Optional[str] = None
-    data_classification: str # Added data_classification, now mandatory
-    mcp_servers: List[str]
-    instructions: Optional[str] = "You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more"
+from .models import AgentSpecification
 
 
 def load_agent_specifications(file_path: str = "packages/agents/agents.toml") -> List[AgentSpecification]:
