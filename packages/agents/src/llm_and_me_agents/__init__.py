@@ -84,7 +84,7 @@ async def main(cli_args: argparse.Namespace):
                 openai_compatible_model,
                 instrument=True,
                 mcp_servers=active_mcp_servers,
-                system_prompt=current_agent_spec.system_prompt,
+                instructions=current_agent_spec.instructions,
             )
         else:
             # Default behavior if no base_url is specified
@@ -92,7 +92,7 @@ async def main(cli_args: argparse.Namespace):
                 model=current_agent_spec.llm_model_name,
                 instrument=True,
                 mcp_servers=active_mcp_servers,
-                system_prompt=current_agent_spec.system_prompt,
+                instructions=current_agent_spec.instructions,
             )
 
         # message_history is now managed by the switching logic / initial setup

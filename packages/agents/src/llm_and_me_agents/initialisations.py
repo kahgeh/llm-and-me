@@ -16,7 +16,7 @@ class AgentSpecification(BaseModel):
     base_url: Optional[str] = None
     data_classification: str # Added data_classification, now mandatory
     mcp_servers: List[str]
-    system_prompt: Optional[str] = "You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more"
+    instructions: Optional[str] = "You are a software engineering assistant, using en-AU locale. If the user asks for json, return plain json text, nothing more"
 
 
 def load_agent_specifications(file_path: str = "packages/agents/agents.toml") -> List[AgentSpecification]:

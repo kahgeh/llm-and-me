@@ -19,7 +19,7 @@ mcp_servers = [
     "datetime_server",
     "rag_crawler_server"
 ]
-system_prompt = "You are a software engineering assistant. Warn if you notice you have access to people names or sensitive information"
+instructions = "You are a software engineering assistant. Warn if you notice you have access to people names or sensitive information"
 
 [[agents]]
 name = "Private Data Analyst"
@@ -38,7 +38,7 @@ mcp_servers = [
     "datetime_server",
     "rag_crawler_server"
 ]
-system_prompt = """
+instructions = """
 You are a data analysis assistant with access to private data sources and tools. 
 You can perform analysis and answer questions based on the data. 
 You have access to functions. If you decide to invoke any of the function(s), you MUST put it in the format of {"name": function name, "parameters": dictionary of argument name and its value} 
